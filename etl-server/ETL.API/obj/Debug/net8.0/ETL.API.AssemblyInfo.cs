@@ -11,11 +11,11 @@
 using System;
 using System.Reflection;
 
-[assembly: Microsoft.Extensions.Configuration.UserSecrets.UserSecretsIdAttribute("82503f77-ea9f-4a44-99ed-184209365b59")]
+[assembly: Microsoft.Extensions.Configuration.UserSecrets.UserSecretsIdAttribute("b48a11ce-d4c1-4ab4-9f6a-5dd097b8956a")]
 [assembly: System.Reflection.AssemblyCompanyAttribute("ETL.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c977ea9cb830c58cabd59d8fc33beae96acb0d3a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
 [assembly: System.Reflection.AssemblyProductAttribute("ETL.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ETL.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
