@@ -1,0 +1,32 @@
+<form class="login-form">
+  <h1 class="login-form__title">Login</h1>
+
+  <div class="login-form__field">
+    <p-floatlabel variant="on">
+      <input pInputText id="username" autocomplete="off"/>
+      <label for="username">UserName</label>
+    </p-floatlabel>
+  </div>
+
+  <div class="login-form__field">
+    <p-floatlabel variant="on">
+      <p-password id="password_input" autocomplete="off">
+        <ng-template #header>
+          <div class="login-form__password-header">Reset Password</div>
+        </ng-template>
+        <ng-template #footer>
+          <p-divider/>
+          <ul class="login-form__password-rules">
+            <li>At least one lowercase</li>
+            <li>At least one uppercase</li>
+            <li>At least one numeric</li>
+            <li>Minimum 8 characters</li>
+          </ul>
+        </ng-template>
+      </p-password>
+      <label for="password">Password</label>
+    </p-floatlabel>
+  </div>
+
+  <p-button class="login-form__button" label="Login"></p-button>
+</form>
