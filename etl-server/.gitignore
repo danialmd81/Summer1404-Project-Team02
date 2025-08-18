@@ -3,8 +3,6 @@ EnglishData/
 TestResults/
 *.lutignore
 *.lutconfig
-*.github
-.vs/
 
 wwwroot
 

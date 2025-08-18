@@ -12,10 +12,10 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["ETL.API/ETL.API.csproj", "ETL.API/"]
-RUN dotnet restore "./ETL.API/ETL.API.csproj"
+COPY ["src/ETL.API/ETL.API.csproj", "src/ETL.API/"]
+RUN dotnet restore "./src/ETL.API/ETL.API.csproj"
 COPY . .
-WORKDIR "/src/ETL.API"
+WORKDIR "/src/src/ETL.API"
 RUN dotnet build "./ETL.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage
