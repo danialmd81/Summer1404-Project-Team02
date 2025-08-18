@@ -1,4 +1,4 @@
-import {NgModule} from "@angular/core";
+import {APP_INITIALIZER, NgModule} from "@angular/core";
 import {BrowserModule} from "@angular/platform-browser";
 import {AppComponent} from './app.component';
 import {KeycloakAngularModule, KeycloakService} from 'keycloak-angular';
@@ -32,7 +32,11 @@ function initializeKeycloak(keycloak: KeycloakService) {
       theme: {
         preset: Aura
       }
-    })]
+    }), {
+      provide: APP_INITIALIZER,
+      useFactory: initializeKeycloak,
+      deps: [KeycloakService],
+    },]
 })
 export class AppModule {
 }
