@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ETL.Application\ETL.Application.csproj" />
+    <ProjectReference Include="..\ETL.Common\ETL.Common.csproj" />
     <ProjectReference Include="..\ETL.Infrastructure\ETL.Infrastructure.csproj" />
   </ItemGroup>
 
