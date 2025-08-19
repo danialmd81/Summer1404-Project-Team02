@@ -1,42 +1,6 @@
-/* You can add global styles to this file, and also import other style files */
-
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 
-}
-
-:root {
-  /* Canvas / Background */
-  --bg-canvas: #fffaf3;         // خیلی روشن، مایل به کرم
-  --bg-alt: #fff4e0;            // پس‌زمینه دوم ملایم
-
-  /* Topbar */
-  --topbar-bg: #ff9500;         // نارنجی پر انرژی
-  --topbar-text: #ffffff;
-
-  /* Sidebar */
-  --sidebar-bg: #ffb84d;        // نارنجی روشن‌تر
-  --sidebar-text: #4a2800;      // قهوه‌ای تیره برای کنتراست
-
-  /* Primary Colors */
-  --primary: #ff7b00;           // نارنجی تند (CTA, Highlight)
-  --primary-hover: #e86e00;
-
-  --accent: #ffd60a;            // زرد درخشان برای هایلایت
-  --accent-hover: #e6c200;
-
-  /* Typography */
-  --text-primary: #2d2a26;      // متن اصلی
-  --text-secondary: #6e6259;    // متن ثانویه
-
-  /* Borders / Dividers */
-  --border-color: #f2d2a9;
-
-  /* States */
-  --success: #a3e635;           // سبز لایم (success)
-  --error: #dc2626;             // قرمز خطا
-  --warning: #facc15;           // زرد هشدار
-  --info: #fde68a;              // بژ روشن (info)
 }

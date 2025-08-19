@@ -1,9 +1,12 @@
 import {Component} from '@angular/core';
+import {Button} from 'primeng/button';
 
 @Component({
   selector: 'app-topbar',
   standalone: true,
-  imports: [],
+  imports: [
+    Button
+  ],
   templateUrl: './topbar.component.html',
   styleUrl: './topbar.component.scss'
 })
