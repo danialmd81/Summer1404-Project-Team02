@@ -3,3 +3,7 @@
 .vs/
 .vscode/*
 .vs/*
+/.idea/indexLayout.xml
+/.idea/projectSettingsUpdater.xml
+/.idea/vcs.xml
+/.idea/workspace.xml
