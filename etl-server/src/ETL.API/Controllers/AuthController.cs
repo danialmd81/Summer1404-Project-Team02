@@ -1,81 +1,119 @@
-﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ETL.API.Controllers;
-[Route("api/[controller]")]
+
 [ApiController]
+[Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IConfiguration _configuration;
+
+    public AuthController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+    {
+        _httpClientFactory = httpClientFactory;
+        _configuration = configuration;
+    }
     
-    // [HttpGet]
-    // public ActionResult<string> GetRedirectUrl()
-    // {
-    //     
-    // } 
+    [HttpGet("login")]
+    public IActionResult Login()
+    {
+        var authUrl = $"{_configuration["Authentication:Authority"]}/protocol/openid-connect/auth";
+        var clientId = _configuration["Authentication:ClientId"];
+        var redirectUri = _configuration["Authentication:RedirectUri"];
+
+        var finalUrl = $"{authUrl}?" +
+                       $"client_id={clientId}&" +
+                       $"redirect_uri={Uri.EscapeDataString(redirectUri)}&" +
+                       $"response_type=code" +
+                       $"&scope=openid profile email";
+
+        return Ok(new { redirectUrl = finalUrl });
+    }
     
-    // [Authorize]
-    // [HttpGet]
-    // public Task<IActionResult> GetCurrentUserInfo()
-    // {
-    //     return  Task.FromResult<IActionResult>(new OkObjectResult("Hello, World!"));
-    // }
-    //
-    // public async Task<IActionResult> LoginCallback()
-    // {
-    //     var authResult = await HttpContext.AuthenticateAsync(OpenIdConnectDefaults.AuthenticationScheme);
-    //     if (authResult?.Succeeded != true)
-    //     {
-    //         // Handle failed authentication
-    //         return RedirectToAction("Login");
-    //     }
-    //
-    //     // Get the access token and refresh token
-    //     var accessToken = authResult.Properties.GetTokenValue("access_token");
-    //     var refreshToken = authResult.Properties.GetTokenValue("refresh_token");
-    //
-    //     // Set them as secure, HttpOnly cookies
-    //     var cookieOptions = new CookieOptions
-    //     {
-    //         HttpOnly = true,     // prevent JavaScript from reading it
-    //         Secure = true,       // only over HTTPS
-    //         SameSite = SameSiteMode.Strict, // helps prevent CSRF
-    //         Expires = DateTimeOffset.UtcNow.AddMinutes(30) // token lifetime
-    //     };
-    //
-    //     HttpContext.Response.Cookies.Append("access_token", accessToken, cookieOptions);
-    //     HttpContext.Response.Cookies.Append("refresh_token", refreshToken, new CookieOptions
-    //     {
-    //         HttpOnly = true,
-    //         Secure = true,
-    //         SameSite = SameSiteMode.Strict,
-    //         Expires = DateTimeOffset.UtcNow.AddDays(7) // refresh lasts longer
-    //     });
-    //
-    //     // Redirect the user to the desired page
-    //     return RedirectToAction("Index");
-    // }
-    [HttpGet("public")]
-    public IActionResult Public() => Ok("Anyone can see this");
+    [HttpPost("callback")]
+    public async Task<IActionResult> Callback([FromBody] CallbackRequest request)
+    {
+        if (string.IsNullOrEmpty(request.Code))
+        {
+            return BadRequest("Authorization code is missing.");
+        }
+        
+        var tokenEndpoint = $"{_configuration["Authentication:Authority"]}/protocol/openid-connect/token";
+        var clientId = _configuration["Authentication:ClientId"];
+        var clientSecret = _configuration["Authentication:ClientSecret"];
+        var redirectUri = _configuration["Authentication:RedirectUri"];
+
+        var requestBody = new Dictionary<string, string>
+        {
+            { "grant_type", "authorization_code" },
+            { "code", request.Code },
+            { "redirect_uri", redirectUri },
+            { "client_id", clientId },
+            { "client_secret", clientSecret }
+        };
+
+        var httpClient = _httpClientFactory.CreateClient();
+        var response = await httpClient.PostAsync(tokenEndpoint, new FormUrlEncodedContent(requestBody));
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            return BadRequest($"Token exchange failed: {errorContent}");
+        }
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+        var tokenData = JsonSerializer.Deserialize<TokenResponse>(responseContent);
+
+        if (tokenData == null || string.IsNullOrEmpty(tokenData.AccessToken))
+        {
+            return BadRequest("Access token not found in the response.");
+        }
+
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true, // Set to true in production
+            SameSite = SameSiteMode.Strict,
+            Expires = DateTime.UtcNow.AddSeconds(tokenData.ExpiresIn)
+        };
+        Response.Cookies.Append("__Host-auth-token", tokenData.AccessToken, cookieOptions);
+
+        return Ok(new { message = "Authentication successful" });
+    }
+
 
     [Authorize]
-    [HttpGet("secure")]
-    public IActionResult Secure() => Ok($"Hello {User.Identity?.Name}");
+    [HttpPost("logout")]
+    public IActionResult Logout()
+    {
+        var keycloakLogoutUrl = $"{_configuration["Authentication:Authority"]}/protocol/openid-connect/logout";
+        Response.Cookies.Delete("__Host-auth-token");
+        return Ok(new { keycloakLogoutUrl });
+    }
+}
 
-    [Authorize(Roles = "user-admin")]
-    [HttpGet("admin")]
-    public IActionResult Admin() => Ok("You are an admin");
-    
-    // [HttpGet("/login")]
-    // public IActionResult Login(string? returnUrl = "/secure")
-    // {
-    //     return Challenge(new AuthenticationProperties { RedirectUri = "/" },
-    //         OpenIdConnectDefaults.AuthenticationScheme);
-    //
-    //    // return new AuthenticationProperties { RedirectUri = returnUrl };
-    // }
+// DTO for the incoming request to the callback endpoint
+public class CallbackRequest
+{
+    public string Code { get; set; }
+}
 
-    
-    
+// DTO to deserialize Keycloak's token response
+public class TokenResponse
+{
+    [JsonPropertyName("access_token")]
+    public string AccessToken { get; set; }
+
+    [JsonPropertyName("expires_in")]
+    public int ExpiresIn { get; set; }
+
+    [JsonPropertyName("refresh_token")]
+    public string RefreshToken { get; set; }
+
+    [JsonPropertyName("id_token")]
+    public string IdToken { get; set; }
 }

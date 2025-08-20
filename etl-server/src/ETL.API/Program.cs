@@ -23,12 +23,31 @@ builder.Services
     .AddApplication()
     .AddInfrastructure();
 
-builder.Services.AddAuthorization();
-builder.Services.AddKeycloakAuthentication(builder.Configuration); // clean extension
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("SystemAdminOnly", policy =>
+        policy.RequireRole("system_admin"));
+
+    options.AddPolicy("DataAdminOnly", policy =>
+        policy.RequireRole("data_admin"));
+
+    options.AddPolicy("AnalystOnly", policy =>
+        policy.RequireRole("analyst"));
+
+    options.AddPolicy("CanManageUsers", policy =>
+        policy.RequireRole("system_admin"));
+    
+    options.AddPolicy("AuthenticatedUser", policy =>
+        policy.RequireAuthenticatedUser());
+});
+
+builder.Services.AddKeycloakStatelessCookieAuth(builder.Configuration); // clean extension
 
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+
+builder.Services.AddHttpClient();
 
 var app = builder.Build();
 

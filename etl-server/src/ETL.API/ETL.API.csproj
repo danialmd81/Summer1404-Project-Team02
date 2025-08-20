@@ -24,8 +24,4 @@
     <ProjectReference Include="..\ETL.Infrastructure\ETL.Infrastructure.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Controllers\" />
-  </ItemGroup>
-
 </Project>
