@@ -47,8 +47,17 @@ builder.Services.AddKeycloakStatelessCookieAuth(builder.Configuration); // clean
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
-builder.Services.AddHttpClient();
 
+builder.Services.AddHttpClient(string.Empty, client => { /* can configure client defaults here */ })
+    .ConfigurePrimaryHttpMessageHandler(() =>
+    {
+        // ⚠️ WARNING: DANGEROUS - FOR DEVELOPMENT ONLY
+        // This handler bypasses SSL certificate validation.
+        return new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        };
+    });
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

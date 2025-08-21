@@ -19,7 +19,7 @@ public class UserProfileDto
 public class UserController : ControllerBase
 {
     [HttpGet("profile")]
-    [Authorize(Policy = "AuthenticatedUser")]
+    [Authorize]
     public IActionResult GetUserProfile()
     {
         var userProfile = new UserProfileDto

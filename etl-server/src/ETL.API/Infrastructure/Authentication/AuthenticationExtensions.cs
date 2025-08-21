@@ -20,6 +20,12 @@ public static class AuthenticationExtensions
                 options.Authority = authority;
                 options.Audience = clientId;
                 options.RequireHttpsMetadata = false; // Dev only
+                options.BackchannelHttpHandler = new HttpClientHandler
+                {
+                    // ⚠️ WARNING: DANGEROUS - FOR DEVELOPMENT ONLY
+                    // Bypasses SSL certificate validation for the middleware's internal HTTP client.
+                    ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+                };
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     NameClaimType = "preferred_username",
