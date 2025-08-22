@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Text.Json;
+using ETL.API.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace ETL.API.Controllers;
 
@@ -17,23 +17,23 @@ public class AuthController : ControllerBase
         _httpClientFactory = httpClientFactory;
         _configuration = configuration;
     }
-    
+
     [HttpGet("login")]
-    public IActionResult Login()
+    public IActionResult Login(string redirectPath)
     {
         var authUrl = $"{_configuration["Authentication:Authority"]}/protocol/openid-connect/auth";
         var clientId = _configuration["Authentication:ClientId"];
-        var redirectUri = _configuration["Authentication:RedirectUri"];
+        var redirectUri = $"{_configuration["Authentication:RedirectUri"]}/{redirectPath}";
 
         var finalUrl = $"{authUrl}?" +
                        $"client_id={clientId}&" +
                        $"redirect_uri={Uri.EscapeDataString(redirectUri)}&" +
                        $"response_type=code" +
-                       $"&scope=openid profile email";
+                       $"&scope=openid&profile&email";
 
         return Ok(new { redirectUrl = finalUrl });
     }
-    
+
     [HttpPost("callback")]
     public async Task<IActionResult> Callback([FromBody] CallbackRequest request)
     {
@@ -41,11 +41,11 @@ public class AuthController : ControllerBase
         {
             return BadRequest("Authorization code is missing.");
         }
-        
+
         var tokenEndpoint = $"{_configuration["Authentication:Authority"]}/protocol/openid-connect/token";
         var clientId = _configuration["Authentication:ClientId"];
         var clientSecret = _configuration["Authentication:ClientSecret"];
-        var redirectUri = _configuration["Authentication:RedirectUri"];
+        var redirectUri = $"{_configuration["Authentication:RedirectUri"]}/{request.RedirectPath}";
 
         var requestBody = new Dictionary<string, string>
         {
@@ -73,14 +73,24 @@ public class AuthController : ControllerBase
             return BadRequest("Access token not found in the response.");
         }
 
-        var cookieOptions = new CookieOptions
+        var accessCookieOptions = new CookieOptions
         {
             HttpOnly = true,
-            Secure = true, // Set to true in production
+            Secure = true,
             SameSite = SameSiteMode.Strict,
-            Expires = DateTime.UtcNow.AddSeconds(tokenData.ExpiresIn)
+            Expires = DateTime.UtcNow.AddSeconds(tokenData.AccessExpiresIn)
         };
-        Response.Cookies.Append("__Host-auth-token", tokenData.AccessToken, cookieOptions);
+
+        var refreshCookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Expires = DateTime.UtcNow.AddSeconds(tokenData.RefreshExpiresIn)
+        };
+
+        Response.Cookies.Append("access_token", tokenData.AccessToken, accessCookieOptions);
+        Response.Cookies.Append("refresh_token", tokenData.RefreshToken, refreshCookieOptions);
 
         return Ok(new { message = "Authentication successful" });
     }
@@ -91,29 +101,7 @@ public class AuthController : ControllerBase
     public IActionResult Logout()
     {
         var keycloakLogoutUrl = $"{_configuration["Authentication:Authority"]}/protocol/openid-connect/logout";
-        Response.Cookies.Delete("__Host-auth-token");
+        Response.Cookies.Delete("access_token");
         return Ok(new { keycloakLogoutUrl });
     }
-}
-
-// DTO for the incoming request to the callback endpoint
-public class CallbackRequest
-{
-    public string Code { get; set; }
-}
-
-// DTO to deserialize Keycloak's token response
-public class TokenResponse
-{
-    [JsonPropertyName("access_token")]
-    public string AccessToken { get; set; }
-
-    [JsonPropertyName("expires_in")]
-    public int ExpiresIn { get; set; }
-
-    [JsonPropertyName("refresh_token")]
-    public string RefreshToken { get; set; }
-
-    [JsonPropertyName("id_token")]
-    public string IdToken { get; set; }
 }

@@ -3,16 +3,15 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
-namespace ETL.API.Infrastructure.Authentication;
-
-public static class AuthenticationExtensions
+namespace ETL.API.Infrastructure;
+public static class KeycloakOAuth
 {
-    public static IServiceCollection AddKeycloakStatelessCookieAuth(this IServiceCollection services, IConfiguration config)
+    public static IServiceCollection AddKeycloakOAuth(this IServiceCollection services, IConfiguration config)
     {
         var section = config.GetSection("Authentication");
         var authority = section["Authority"]!;
         var clientId = section["ClientId"]!;
-        const string cookieName = "__Host-auth-token";
+        const string cookieName = "access_token";
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -31,6 +30,8 @@ public static class AuthenticationExtensions
                     NameClaimType = "preferred_username",
                     RoleClaimType = ClaimTypes.Role, // Use the ClaimTypes constant for the role
                     ValidateAudience = true,
+                    ValidateLifetime = true,
+
                 };
 
                 options.Events = new JwtBearerEvents
@@ -64,8 +65,7 @@ public static class AuthenticationExtensions
                     }
                 };
             });
-        
-        // ... your antiforgery setup ...
+
         return services;
     }
 }

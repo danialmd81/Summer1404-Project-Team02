@@ -1,7 +1,7 @@
 ﻿using System.Security.Claims;
 using System.Text.Json;
 
-namespace ETL.API.Infrastructure.Authentication;
+namespace ETL.API.Middlewares;
 public class KeycloakClaimsMiddleware
 {
     private readonly RequestDelegate _next;

@@ -1,14 +1,7 @@
-using System.IdentityModel.Tokens.Jwt;
 using ETL.API.Infrastructure;
-using ETL.API.Infrastructure.Authentication;
-// using ETL.API.Middleware;
+using ETL.API.Middlewares;
 using ETL.Application;
 using ETL.Infrastructure;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,7 +14,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services
     .AddApplication()
-    .AddInfrastructure();
+    .AddInfrastructure(builder.Configuration);
 
 builder.Services.AddAuthorization(options =>
 {
@@ -36,19 +29,19 @@ builder.Services.AddAuthorization(options =>
 
     options.AddPolicy("CanManageUsers", policy =>
         policy.RequireRole("system_admin"));
-    
+
     options.AddPolicy("AuthenticatedUser", policy =>
         policy.RequireAuthenticatedUser());
 });
 
-builder.Services.AddKeycloakStatelessCookieAuth(builder.Configuration); // clean extension
+builder.Services.AddKeycloakOAuth(builder.Configuration); // clean extension
 
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 
-builder.Services.AddHttpClient(string.Empty, client => { /* can configure client defaults here */ })
+builder.Services.AddHttpClient(string.Empty)
     .ConfigurePrimaryHttpMessageHandler(() =>
     {
         // ⚠️ WARNING: DANGEROUS - FOR DEVELOPMENT ONLY
@@ -58,6 +51,7 @@ builder.Services.AddHttpClient(string.Empty, client => { /* can configure client
             ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
         };
     });
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -72,6 +66,7 @@ app.UseExceptionHandler();
 
 app.UseHttpsRedirection();
 
+app.UseTokenRefresh();
 
 app.UseAuthentication();
 app.UseKeycloakClaims(); // custom middleware
