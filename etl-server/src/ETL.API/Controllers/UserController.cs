@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using ETL.API.Infrastructure;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace ETL.API.Controllers;
 
@@ -18,6 +19,7 @@ public class UserProfileDto
 [Route("api/[controller]")]
 public class UserController : ControllerBase
 {
+
     [HttpGet("profile")]
     [Authorize]
     public IActionResult GetUserProfile()
@@ -38,18 +40,13 @@ public class UserController : ControllerBase
 
         return Ok(userProfile);
     }
-    
-    [Authorize(Policy = "SystemAdminOnly")]
+
+    [Authorize(Policy = Policies.SystemAdminOnly)]
     [HttpGet("admin")]
-    public IActionResult Admin() => Ok("You are an admin");
-    
-    [HttpGet("debug-claims")]
-    [Authorize] // Use the simple authorize which you said works
-    public IActionResult DebugClaims()
+    public IActionResult Admin()
     {
-        // This will return all claims associated with the current user.
-        var claims = User.Claims.Select(c => new { c.Type, c.Value });
-        return Ok(claims);
+        var user = HttpContext.User;
+        return Ok(User.IsInRole(Roles.SystemAdmin));
     }
-    
+
 }

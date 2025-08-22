@@ -5,8 +5,6 @@ using ETL.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -16,25 +14,9 @@ builder.Services
     .AddApplication()
     .AddInfrastructure(builder.Configuration);
 
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("SystemAdminOnly", policy =>
-        policy.RequireRole("system_admin"));
+builder.Services.AddKeycloakAuthorization(builder.Configuration);
 
-    options.AddPolicy("DataAdminOnly", policy =>
-        policy.RequireRole("data_admin"));
-
-    options.AddPolicy("AnalystOnly", policy =>
-        policy.RequireRole("analyst"));
-
-    options.AddPolicy("CanManageUsers", policy =>
-        policy.RequireRole("system_admin"));
-
-    options.AddPolicy("AuthenticatedUser", policy =>
-        policy.RequireAuthenticatedUser());
-});
-
-builder.Services.AddKeycloakOAuth(builder.Configuration); // clean extension
+builder.Services.AddKeycloakOAuth(builder.Configuration);
 
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -69,7 +51,6 @@ app.UseHttpsRedirection();
 app.UseTokenRefresh();
 
 app.UseAuthentication();
-app.UseKeycloakClaims(); // custom middleware
 app.UseAuthorization();
 
 

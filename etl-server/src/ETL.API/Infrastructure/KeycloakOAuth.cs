@@ -27,11 +27,8 @@ public static class KeycloakOAuth
                 };
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    NameClaimType = "preferred_username",
-                    RoleClaimType = ClaimTypes.Role, // Use the ClaimTypes constant for the role
                     ValidateAudience = true,
                     ValidateLifetime = true,
-
                 };
 
                 options.Events = new JwtBearerEvents
