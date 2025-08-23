@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ETL.API.DTOs;
+using ETL.API.Services.Abstraction;
 
 namespace ETL.API.Controllers;
 
@@ -15,11 +16,14 @@ public class AdminController : ControllerBase
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _configuration;
+    private readonly ISsoAdminService _keycloakAdminService;
 
-    public AdminController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+
+    public AdminController(IHttpClientFactory httpClientFactory, IConfiguration configuration, ISsoAdminService keycloakAdminService)
     {
         _httpClientFactory = httpClientFactory;
         _configuration = configuration;
+        _keycloakAdminService = keycloakAdminService;
     }
 
 
@@ -31,7 +35,7 @@ public class AdminController : ControllerBase
         var realm = _configuration["Authentication:Realm"];
 
         // --- Step 1: Get an admin token for the backend service ---
-        var adminAccessToken = await GetAdminAccessToken(httpClient);
+        var adminAccessToken = await _keycloakAdminService.GetAdminAccessTokenAsync();
         if (string.IsNullOrEmpty(adminAccessToken))
         {
             return StatusCode(500, "Could not obtain admin credentials.");
@@ -105,36 +109,5 @@ public class AdminController : ControllerBase
         return StatusCode(201, new { message = $"User '{request.Username}' created successfully." });
     }
 
-
-    private async Task<string?> GetAdminAccessToken(HttpClient httpClient)
-    {
-        var tokenEndpoint = $"{_configuration["Authentication:Authority"]}/protocol/openid-connect/token";
-        var adminClientId = _configuration["KeycloakAdmin:ClientId"];
-        var adminClientSecret = _configuration["KeycloakAdmin:ClientSecret"];
-
-        var adminTokenBody = new Dictionary<string, string>
-        {
-            ["grant_type"] = "client_credentials",
-            ["client_id"] = adminClientId,
-            ["client_secret"] = adminClientSecret
-        };
-
-        var adminTokenResponse = await httpClient.PostAsync(tokenEndpoint, new FormUrlEncodedContent(adminTokenBody));
-        if (!adminTokenResponse.IsSuccessStatusCode) return null;
-
-        var adminTokenData = await adminTokenResponse.Content.ReadFromJsonAsync<TokenResponse>();
-        return adminTokenData?.AccessToken;
-    }
-}
-
-
-// DTOs for the Create User flow. You can place these in a separate DTOs folder.
-public class CreateUserRequest
-{
-    public string Username { get; set; }
-    public string Email { get; set; }
-    public string Password { get; set; }
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
-    public List<string>? Roles { get; set; }
+    
 }

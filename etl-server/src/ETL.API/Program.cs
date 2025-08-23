@@ -1,5 +1,7 @@
 using ETL.API.Infrastructure;
 using ETL.API.Middlewares;
+using ETL.API.Services;
+using ETL.API.Services.Abstraction;
 using ETL.Application;
 using ETL.Infrastructure;
 
@@ -34,6 +36,9 @@ builder.Services.AddHttpClient(string.Empty)
             ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
         };
     });
+
+builder.Services.AddScoped<ISsoAdminService, KeycloakAdminService>();
+
 
 var app = builder.Build();
 

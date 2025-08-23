@@ -3,8 +3,11 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using ETL.API.DTOs;
+using ETL.API.Services.Abstraction;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
+namespace ETL.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -12,11 +15,14 @@ public class AccountController : ControllerBase
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _configuration;
+    private readonly ISsoAdminService _keycloakAdminService;
 
-    public AccountController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+
+    public AccountController(IHttpClientFactory httpClientFactory, IConfiguration configuration, ISsoAdminService keycloakAdminService)
     {
         _httpClientFactory = httpClientFactory;
         _configuration = configuration;
+        _keycloakAdminService = keycloakAdminService;
     }
 
     [HttpPost("change-password")]
@@ -57,10 +63,10 @@ public class AccountController : ControllerBase
         }
 
         // --- Step 2: Get an admin token for the backend service ---
-        var adminAccessToken = await GetAdminAccessToken(httpClient);
+        var adminAccessToken = await _keycloakAdminService.GetAdminAccessTokenAsync();
         if (string.IsNullOrEmpty(adminAccessToken))
         {
-             return StatusCode(500, "Could not obtain admin credentials.");
+            return StatusCode(500, "Could not obtain admin credentials.");
         }
         
         // --- Step 3: Call the Admin API to set the NEW password ---
@@ -87,31 +93,4 @@ public class AccountController : ControllerBase
 
         return Ok(new { message = "Password changed successfully." });
     }
-    
-    private async Task<string?> GetAdminAccessToken(HttpClient httpClient)
-    {
-        var tokenEndpoint = $"{_configuration["Authentication:Authority"]}/protocol/openid-connect/token";
-        var adminClientId = _configuration["KeycloakAdmin:ClientId"];
-        var adminClientSecret = _configuration["KeycloakAdmin:ClientSecret"];
-
-        var adminTokenBody = new Dictionary<string, string>
-        {
-            ["grant_type"] = "client_credentials",
-            ["client_id"] = adminClientId,
-            ["client_secret"] = adminClientSecret
-        };
-
-        var adminTokenResponse = await httpClient.PostAsync(tokenEndpoint, new FormUrlEncodedContent(adminTokenBody));
-        if (!adminTokenResponse.IsSuccessStatusCode) return null;
-
-        var adminTokenData = await adminTokenResponse.Content.ReadFromJsonAsync<TokenResponse>();
-        return adminTokenData?.AccessToken;
-    }
-}
-
-public class ChangePasswordRequest
-{
-    public string CurrentPassword { get; set; }
-    public string NewPassword { get; set; }
-    public string ConfirmPassword { get; set; }
 }
