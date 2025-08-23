@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Net.Http.Headers;
+using System.Text.Json;
 using ETL.API.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -98,10 +99,46 @@ public class AuthController : ControllerBase
 
     [Authorize]
     [HttpPost("logout")]
-    public IActionResult Logout()
+    public async Task<IActionResult> Logout()
     {
-        var keycloakLogoutUrl = $"{_configuration["Authentication:Authority"]}/protocol/openid-connect/logout";
+        var accessToken = Request.Cookies["access_token"];
+        var refreshToken = Request.Cookies["refresh_token"];
+
+        var token = accessToken.StartsWith("Bearer ")
+                ? accessToken.Substring(7)
+                : accessToken;
+
+        var logoutEndpoint = $"{_configuration["Authentication:Authority"]}/protocol/openid-connect/logout";
+        var clientId = _configuration["Authentication:ClientId"];
+        var clientSecret = _configuration["Authentication:ClientSecret"];
+
+        var logoutData = new Dictionary<string, string>
+            {
+                { "client_id", clientId },
+                { "client_secret", clientSecret },
+                { "refresh_token", refreshToken }
+            };
+
+        var httpClient = _httpClientFactory.CreateClient();
+        var request = new HttpRequestMessage(HttpMethod.Post, logoutEndpoint);
+        request.Content = new FormUrlEncodedContent(logoutData);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await httpClient.SendAsync(request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            return BadRequest($"Logout failed: {errorContent}");
+        }
+
         Response.Cookies.Delete("access_token");
-        return Ok(new { keycloakLogoutUrl });
+        Response.Cookies.Delete("refresh_token");
+
+        Response.Headers.CacheControl = "no-cache, no-store";
+        Response.Headers.Pragma = "no-cache";
+        Response.Headers.Expires = "0";
+
+        return Ok(new { message = "Logout successful" });
     }
 }
