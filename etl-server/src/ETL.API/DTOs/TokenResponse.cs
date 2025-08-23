@@ -2,8 +2,7 @@
 
 namespace ETL.API.DTOs;
 
-// DTO to deserialize Keycloak's token response
-public sealed record class TokenResponse
+public record class TokenResponse
 {
     [JsonPropertyName("access_token")]
     public required string AccessToken { get; init; }

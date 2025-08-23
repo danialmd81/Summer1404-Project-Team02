@@ -1,6 +1,6 @@
 ﻿namespace ETL.API.Infrastructure;
 
-public static partial class KeycloakAuthorization
+public static class AuthorizationService
 {
     public static IServiceCollection AddKeycloakAuthorization(this IServiceCollection services, IConfiguration config)
     {
