@@ -1,0 +1,107 @@
+:root {
+  --header-color: #ffffff;
+  --muted: rgba(0, 0, 0, 0.54);
+}
+
+.table-wrapper {
+  padding: 1rem;
+  border-radius: 0.8rem;
+  background: var(--p-surface-0);
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
+}
+
+.table-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  .search {
+    position: relative;
+
+    .search-input {
+      padding: 0.6rem 1rem;
+      border-radius: 0.6rem;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      min-width: 18rem;
+      font-size: 0.95rem;
+      outline: none;
+      transition: box-shadow .12s, border-color .12s;
+      background: var(--p-surface-1);
+    }
+
+    .search-input:focus {
+      box-shadow: 0 0 0 6px var(--p-primary-50);
+      border-color: var(--p-primary-600);
+    }
+
+    .clear-btn {
+      position: absolute;
+      right: 0.45rem;
+      top: 50%;
+      transform: translateY(-50%);
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+  }
+
+  .add-user {
+    font-weight: 500;
+  }
+}
+
+:global(.p-table thead th) {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: linear-gradient(
+      90deg,
+      var(--p-primary-600),
+      rgba(255, 255, 255, 0.03)
+  );
+  color: var(--header-color);
+  padding: 0.85rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: none;
+  box-shadow: 0 2px 0 rgba(255, 255, 255, 0.02) inset;
+}
+
+:global(.p-datatable-tbody > tr:nth-child(odd)) {
+  background: var(--p-surface-50);
+}
+
+:global(.p-datatable-tbody > tr:hover) {
+  background: var(--p-primary-50);
+  transform: translateY(-1px);
+  transition: background .12s, transform .12s;
+}
+
+:global(.p-table td, .p-table th) {
+  padding: 0.75rem 1rem;
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 20rem;
+}
+
+.empty {
+  text-align: center;
+  padding: 1.2rem;
+  color: var(--muted);
+}
+
+@media (max-width: 640px) {
+  .search .search-input {
+    min-width: 12rem;
+  }
+  :global(.p-table) {
+    font-size: .92rem;
+  }
+}
+

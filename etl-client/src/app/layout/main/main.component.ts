@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import {Component} from '@angular/core';
 import {TopbarComponent} from './components/topbar/topbar.component';
 import {SidebarComponent} from './components/sidebar/sidebar.component';
 import {RouterOutlet} from '@angular/router';
+import {UsersComponent} from '../../features/users/users.component';
 
 @Component({
   selector: 'app-main',
@@ -9,7 +10,8 @@ import {RouterOutlet} from '@angular/router';
   imports: [
     TopbarComponent,
     SidebarComponent,
-    RouterOutlet
+    RouterOutlet,
+    UsersComponent
   ],
   templateUrl: './main.component.html',
   styleUrl: './main.component.scss'

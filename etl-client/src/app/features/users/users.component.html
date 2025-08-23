@@ -1,0 +1,59 @@
+<div class="table-wrapper">
+  <div class="table-toolbar">
+    <div class="left">
+      <div class="search">
+        <input
+          type="search"
+          aria-label="Search by username"
+          placeholder="Search username..."
+          [value]="_enteredSearch"
+          (input)="onSearchChange($event)"
+          class="search-input"
+        />
+      </div>
+    </div>
+
+    <div class="right">
+      <app-create-user-modal/>
+    </div>
+  </div>
+
+
+  <p-table #dt [value]="users" [tableStyle]="{ 'min-width': '50rem' }" [paginator]="true" [rows]="10"
+           [responsiveLayout]="'scroll'">
+    <ng-template pTemplate="header">
+      <tr>
+        @for (col of columns; track col.key) {
+          <th pSortableColumn="{{ col.key }}">{{ col.label }}
+            @if (col.key !== "email" && col.key !== "id") {
+              <p-sortIcon field="{{ col.key }}"></p-sortIcon>
+            }
+          </th>
+        }
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-user>
+      <tr class="data-row">
+        @for (col of columns; track col.key) {
+          <td title="{{ user[col.key] }}">
+            <span *ngIf="col.key === 'username'">
+              {{ user.username }}
+            </span>
+            @if (col.key !== "username") {
+              <span>
+                {{ user[col.key] }}
+              </span>
+            }
+          </td>
+        }
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td [attr.colspan]="columns.length" class="empty">No users found.</td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>

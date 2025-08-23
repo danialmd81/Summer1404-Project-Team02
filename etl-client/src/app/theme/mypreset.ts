@@ -52,7 +52,7 @@ export const CustomPreset = definePreset(Aura, {
           activeColor: '{amber.500}'
         },
         highlight: {
-          background: 'rgba(255, 204, 128, .16)',   // amber-glow
+          background: 'rgba(255, 204, 128, .16)',
           focusBackground: 'rgba(255, 204, 128, .24)',
           color: 'rgba(255,255,255,.87)',
           focusColor: 'rgba(255,255,255,.87)'
