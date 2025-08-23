@@ -1,10 +1,7 @@
-﻿namespace ETL.API.Middlewares;
+﻿using System.Text.Json;
+using ETL.Contracts.Security;
 
-using System.Text.Json;
-using System.Threading.Tasks;
-using ETL.API.DTOs;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
+namespace ETL.API.Middlewares;
 
 public class TokenRefreshMiddleware
 {

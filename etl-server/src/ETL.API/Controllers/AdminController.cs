@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using ETL.API.DTOs;
 using ETL.API.Services.Abstraction;
+using ETL.Contracts.Security;
 
 namespace ETL.API.Controllers;
 

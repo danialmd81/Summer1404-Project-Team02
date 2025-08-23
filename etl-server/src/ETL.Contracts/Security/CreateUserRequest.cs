@@ -1,4 +1,4 @@
-﻿namespace ETL.API.DTOs;
+﻿namespace ETL.Contracts.Security;
 
 public class CreateUserRequest
 {

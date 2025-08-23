@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace ETL.API.DTOs;
+namespace ETL.Contracts.Security;
 
 public record class TokenResponse
 {

@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using ETL.API.DTOs;
 using ETL.API.Services.Abstraction;
+using ETL.Contracts.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
