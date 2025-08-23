@@ -19,8 +19,9 @@
     "@angular/platform-browser-dynamic": "^18.2.0",
     "@angular/router": "^18.2.0",
     "@primeuix/themes": "^1.2.3",
-    "primeng": "^18.0.2",
     "keycloak-angular": "^16.1.0",
+    "primeicons": "^7.0.0",
+    "primeng": "^18.0.2",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.10"

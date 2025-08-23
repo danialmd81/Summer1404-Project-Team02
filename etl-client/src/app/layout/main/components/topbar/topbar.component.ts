@@ -1,11 +1,11 @@
 import {Component} from '@angular/core';
-import {Button} from 'primeng/button';
+import {UserProfileBtnComponent} from './components/user-profile-btn/user-profile-btn.component';
 
 @Component({
   selector: 'app-topbar',
   standalone: true,
   imports: [
-    Button
+    UserProfileBtnComponent
   ],
   templateUrl: './topbar.component.html',
   styleUrl: './topbar.component.scss'
