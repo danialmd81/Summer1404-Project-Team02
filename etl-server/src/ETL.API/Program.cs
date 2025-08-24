@@ -1,7 +1,5 @@
 using ETL.API.Infrastructure;
 using ETL.API.Middlewares;
-using ETL.API.Services;
-using ETL.API.Services.Abstraction;
 using ETL.Application;
 using ETL.Infrastructure;
 
@@ -17,27 +15,9 @@ builder.Services
     .AddApplication()
     .AddInfrastructure(builder.Configuration);
 
-builder.Services.AddKeycloakAuthorization(builder.Configuration);
-
-builder.Services.AddKeycloakOAuth(builder.Configuration);
-
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
-
-
-builder.Services.AddHttpClient(string.Empty)
-    .ConfigurePrimaryHttpMessageHandler(() =>
-    {
-        // ⚠️ WARNING: DANGEROUS - FOR DEVELOPMENT ONLY
-        // This handler bypasses SSL certificate validation.
-        return new HttpClientHandler
-        {
-            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-        };
-    });
-
-builder.Services.AddScoped<ISsoAdminService, KeycloakAdminService>();
 
 
 var app = builder.Build();

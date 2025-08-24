@@ -12,12 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ETL.Contracts\ETL.Contracts.csproj" />
     <ProjectReference Include="..\ETL.Domain\ETL.Domain.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Users\" />
   </ItemGroup>
 
 </Project>

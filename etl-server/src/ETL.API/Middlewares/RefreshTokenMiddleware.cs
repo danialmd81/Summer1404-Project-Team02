@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using ETL.Contracts.Security;
+using ETL.Application.Common.DTOs;
 
 namespace ETL.API.Middlewares;
 

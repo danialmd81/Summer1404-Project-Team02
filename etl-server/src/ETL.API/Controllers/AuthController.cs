@@ -1,7 +1,8 @@
-﻿using System.Net.Http.Headers;
-using System.Text.Json;
-using ETL.API.DTOs;
-using ETL.Contracts.Security;
+﻿using ETL.Application.Auth.ChangePassword;
+using ETL.Application.Auth.DTOs;
+using ETL.Application.Auth.LoginCallback;
+using ETL.Application.Auth.Logout;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,76 +12,47 @@ namespace ETL.API.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IMediator _mediator;
     private readonly IConfiguration _configuration;
 
-    public AuthController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+    public AuthController(IMediator mediator, IConfiguration configuration)
     {
-        _httpClientFactory = httpClientFactory;
+        _mediator = mediator;
         _configuration = configuration;
     }
 
     [HttpGet("login")]
-    public IActionResult Login(string redirectPath)
+    public IActionResult Login([FromQuery] string redirectPath)
     {
         var authUrl = $"{_configuration["Authentication:Authority"]}/protocol/openid-connect/auth";
         var clientId = _configuration["Authentication:ClientId"];
         var redirectUri = $"{_configuration["Authentication:RedirectUri"]}/{redirectPath}";
 
         var finalUrl = $"{authUrl}?" +
-                       $"client_id={clientId}&" +
+                       $"client_id={Uri.EscapeDataString(clientId)}&" +
                        $"redirect_uri={Uri.EscapeDataString(redirectUri)}&" +
-                       $"response_type=code" +
-                       $"&scope=openid&profile&email";
+                       $"response_type=code&" +
+                       $"scope=openid%20profile%20email";
 
         return Ok(new { redirectUrl = finalUrl });
     }
 
-    [HttpPost("callback")]
-    public async Task<IActionResult> Callback([FromBody] CallbackRequest request)
+    [HttpPost("login-callback")]
+    public async Task<IActionResult> Callback([FromBody] LoginCallbackCommand request)
     {
-        if (string.IsNullOrEmpty(request.Code))
-        {
-            return BadRequest("Authorization code is missing.");
-        }
+        var result = await _mediator.Send(request);
 
-        var tokenEndpoint = $"{_configuration["Authentication:Authority"]}/protocol/openid-connect/token";
-        var clientId = _configuration["Authentication:ClientId"];
-        var clientSecret = _configuration["Authentication:ClientSecret"];
-        var redirectUri = $"{_configuration["Authentication:RedirectUri"]}/{request.RedirectPath}";
+        if (result.IsFailure)
+            return BadRequest(new { error = result.Error.Code, message = result.Error.Description });
 
-        var requestBody = new Dictionary<string, string>
-        {
-            { "grant_type", "authorization_code" },
-            { "code", request.Code },
-            { "redirect_uri", redirectUri },
-            { "client_id", clientId },
-            { "client_secret", clientSecret }
-        };
-
-        var httpClient = _httpClientFactory.CreateClient();
-        var response = await httpClient.PostAsync(tokenEndpoint, new FormUrlEncodedContent(requestBody));
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            return BadRequest($"Token exchange failed: {errorContent}");
-        }
-
-        var responseContent = await response.Content.ReadAsStringAsync();
-        var tokenData = JsonSerializer.Deserialize<TokenResponse>(responseContent);
-
-        if (tokenData == null || string.IsNullOrEmpty(tokenData.AccessToken))
-        {
-            return BadRequest("Access token not found in the response.");
-        }
+        var tokens = result.Value;
 
         var accessCookieOptions = new CookieOptions
         {
             HttpOnly = true,
             Secure = true,
             SameSite = SameSiteMode.Strict,
-            Expires = DateTime.UtcNow.AddSeconds(tokenData.AccessExpiresIn)
+            Expires = DateTime.UtcNow.AddSeconds(tokens.AccessExpiresIn)
         };
 
         var refreshCookieOptions = new CookieOptions
@@ -88,15 +60,26 @@ public class AuthController : ControllerBase
             HttpOnly = true,
             Secure = true,
             SameSite = SameSiteMode.Strict,
-            Expires = DateTime.UtcNow.AddSeconds(tokenData.RefreshExpiresIn)
+            Expires = DateTime.UtcNow.AddSeconds(tokens.RefreshExpiresIn)
         };
 
-        Response.Cookies.Append("access_token", tokenData.AccessToken, accessCookieOptions);
-        Response.Cookies.Append("refresh_token", tokenData.RefreshToken, refreshCookieOptions);
+        Response.Cookies.Append("access_token", tokens.AccessToken ?? string.Empty, accessCookieOptions);
+        Response.Cookies.Append("refresh_token", tokens.RefreshToken ?? string.Empty, refreshCookieOptions);
 
         return Ok(new { message = "Authentication successful" });
     }
 
+    [HttpPost("change-pass")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto request)
+    {
+        var result = await _mediator.Send(new ChangePasswordCommand(request, User));
+
+        if (result.IsFailure)
+            return BadRequest(new { error = result.Error.Code, message = result.Error.Description });
+
+        return Ok(new { message = "Password changed successfully." });
+    }
 
     [Authorize]
     [HttpPost("logout")]
@@ -105,33 +88,10 @@ public class AuthController : ControllerBase
         var accessToken = Request.Cookies["access_token"];
         var refreshToken = Request.Cookies["refresh_token"];
 
-        var token = accessToken.StartsWith("Bearer ")
-                ? accessToken.Substring(7)
-                : accessToken;
+        var result = await _mediator.Send(new LogoutCommand(accessToken, refreshToken));
 
-        var logoutEndpoint = $"{_configuration["Authentication:Authority"]}/protocol/openid-connect/logout";
-        var clientId = _configuration["Authentication:ClientId"];
-        var clientSecret = _configuration["Authentication:ClientSecret"];
-
-        var logoutData = new Dictionary<string, string>
-            {
-                { "client_id", clientId },
-                { "client_secret", clientSecret },
-                { "refresh_token", refreshToken }
-            };
-
-        var httpClient = _httpClientFactory.CreateClient();
-        var request = new HttpRequestMessage(HttpMethod.Post, logoutEndpoint);
-        request.Content = new FormUrlEncodedContent(logoutData);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var response = await httpClient.SendAsync(request);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            return BadRequest($"Logout failed: {errorContent}");
-        }
+        if (result.IsFailure)
+            return BadRequest(new { error = result.Error.Code, message = result.Error.Description });
 
         Response.Cookies.Delete("access_token");
         Response.Cookies.Delete("refresh_token");

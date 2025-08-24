@@ -1,4 +1,4 @@
-﻿namespace ETL.Domain.Shared;
+﻿namespace ETL.Domain.Common;
 public abstract class BaseEntity
 {
     public long Id { get; protected set; }

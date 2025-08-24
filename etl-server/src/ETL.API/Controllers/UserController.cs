@@ -1,6 +1,7 @@
-﻿using System.Security.Claims;
-using ETL.API.DTOs;
-using ETL.API.Infrastructure;
+﻿using ETL.Application.Common;
+using ETL.Application.User.Create;
+using ETL.Application.User.GetCurrent;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,29 +11,46 @@ namespace ETL.API.Controllers;
 [Route("api/[controller]")]
 public class UserController : ControllerBase
 {
+    private readonly IMediator _mediator;
+
+    public UserController(IMediator mediator)
+    {
+        _mediator = mediator;
+    }
+
     [Authorize]
     [HttpGet("profile")]
-    public IActionResult GetUserProfile()
+    public async Task<IActionResult> GetUserProfile(CancellationToken ct)
     {
-        var userProfile = new UserProfileDto
+        var dto = await _mediator.Send(new GetUserProfileQuery(User), ct);
+        return Ok(dto);
+    }
+
+    [HttpPost("create")]
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserCommand command, CancellationToken ct)
+    {
+        if (command is null)
+            return BadRequest(new { error = "User.Create.InvalidRequest", message = "Request body is required." });
+
+        var result = await _mediator.Send(command, ct);
+
+        if (result.IsFailure)
         {
-            Id = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value,
-            Username = User.Claims.FirstOrDefault(c => c.Type == "preferred_username")?.Value,
-            Email = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value,
-            FirstName = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.GivenName)?.Value,
-            LastName = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Surname)?.Value,
-            Roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value)
-        };
+            var err = result.Error;
+            return err.Type switch
+            {
+                ErrorType.Validation => BadRequest(new { error = err.Code, message = err.Description }),
+                ErrorType.NotFound => NotFound(new { error = err.Code, message = err.Description }),
+                ErrorType.Conflict => Conflict(new { error = err.Code, message = err.Description }),
+                ErrorType.Problem => StatusCode(500, new { error = err.Code, message = err.Description }),
+                _ => StatusCode(500, new { error = err.Code, message = err.Description })
+            };
+        }
 
-        return Ok(userProfile);
+        var createdId = result.Value;
+
+        var location = Url.Action(null, "User", new { id = createdId }) ?? $"/api/user/{createdId}";
+
+        return Created(location, new { id = createdId, message = $"User '{command.Username}' created." });
     }
-
-    [Authorize(Policy = Policies.SystemAdminOnly)]
-    [HttpGet("admin")]
-    public IActionResult Admin()
-    {
-        var user = HttpContext.User;
-        return Ok(User.IsInRole(Roles.SystemAdmin));
-    }
-
 }
