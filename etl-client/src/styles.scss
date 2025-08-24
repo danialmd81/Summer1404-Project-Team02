@@ -8,6 +8,26 @@
   box-sizing: border-box;
 }
 
+
 html {
   font-family: Inter, serif;
+}
+
+body {
+  background-color: var(--p-surface-0);
+  color: white !important;
+}
+
+.p-paginator-page-selected {
+  background-color: var(--p-primary-900) !important;
+}
+
+
+.p-datatable-table th, .p-datatable-table td {
+  background-color: #171717 !important;
+}
+
+.p-datatable-table-container {
+  border: 1px solid var(--p-surface-200);
+  border-radius: 10px;
 }

@@ -23,16 +23,17 @@
     .search-input {
       padding: 0.6rem 1rem;
       border-radius: 0.6rem;
-      border: 1px solid rgba(0, 0, 0, 0.06);
+      border: 1px solid var(--p-surface-100);
       min-width: 18rem;
       font-size: 0.95rem;
       outline: none;
       transition: box-shadow .12s, border-color .12s;
       background: var(--p-surface-1);
+      color: white;
     }
 
     .search-input:focus {
-      box-shadow: 0 0 0 6px var(--p-primary-50);
+      box-shadow: 0 0 0 6px rgb(from var(--p-primary-500) r g b / 10%);
       border-color: var(--p-primary-600);
     }
 
@@ -53,6 +54,7 @@
     font-weight: 500;
   }
 }
+
 
 :global(.p-table thead th) {
   position: sticky;
@@ -104,4 +106,5 @@
     font-size: .92rem;
   }
 }
+
 

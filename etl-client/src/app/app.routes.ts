@@ -1,10 +1,13 @@
 import {Routes} from '@angular/router';
-import {AuthComponent} from './layout/auth/auth.component';
+import {DashboardComponent} from './layout/dashboard/dashboard.component';
 import {MainComponent} from './layout/main/main.component';
 
 export const appRoutes: Routes = [
   {
-    path: '', component: MainComponent, children: []
+    path: '', component: MainComponent,
+    loadChildren: () => import("./layout/main/main.module").then(m => m.MainModule)
   },
-  {path: 'auth', component: AuthComponent},
+  {
+    path: 'dashboard', loadChildren: () => import("./layout/dashboard/dashboard.module").then(m => m.DashboardModule)
+  },
 ]
