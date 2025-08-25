@@ -1,4 +1,4 @@
-﻿using ETL.Application.Abstractions;
+﻿using ETL.Application.Abstractions.UserServices;
 using ETL.Application.Common;
 using ETL.Application.User.Create;
 using FluentAssertions;
@@ -21,100 +21,130 @@ public class CreateUserCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenUsernameOrPasswordIsEmpty()
+    public async Task Handle_ShouldReturnFailure_WhenUsernameOrPasswordIsMissing()
     {
-        var command = new CreateUserCommand("", "", "", "", "", 
-            new List<string> {}); // invalid input
+        // Arrange
+        var command = new CreateUserCommand("", "", "", "", "", "");
 
-        var result = await _sut.Handle(command, default);
+        // Act
+        var result = await _sut.Handle(command, CancellationToken.None);
 
-        result.IsSuccess.Should().BeFalse();
+        // Assert
+        result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("User.Create.InvalidInput");
     }
 
     [Fact]
     public async Task Handle_ShouldReturnFailure_WhenUserCreationFails()
     {
-        var command = new CreateUserCommand("user", "pass", "", "", "", 
-            new List<string> {});
+        // Arrange
+        var command = new CreateUserCommand("testuser", "", "", "", 
+            "password", "");
+        _userCreator.CreateUserAsync(command, Arg.Any<CancellationToken>())
+            .Returns(Result.Failure<string>(Error.Problem("User.Create.Failed", "creation error")));
 
-        _userCreator.CreateUserAsync(command, default)
-            .Returns(Result.Failure<string>(Error.Failure("User.Create.Failed", "duplicate")));
+        // Act
+        var result = await _sut.Handle(command, CancellationToken.None);
 
-        var result = await _sut.Handle(command, default);
-
-        result.IsSuccess.Should().BeFalse();
+        // Assert
+        result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("User.Create.Failed");
     }
 
     [Fact]
     public async Task Handle_ShouldReturnFailure_WhenRoleAssignmentFails()
     {
-        var command = new CreateUserCommand("user", "pass", "", "", "", 
-            new[] { "Admin" });
+        // Arrange
+        var command = new CreateUserCommand("testuser", "", "", "", 
+            "password", "admin");
+        _userCreator.CreateUserAsync(command, Arg.Any<CancellationToken>())
+            .Returns(Result.Success("new-user-id"));
+        _roleAssigner.AssignRoleAsync("new-user-id", "admin", Arg.Any<CancellationToken>())
+            .Returns(Result.Failure(Error.Failure("Role.Error", "role assignment failed")));
 
-        _userCreator.CreateUserAsync(command, default)
-            .Returns(Result.Success("newUserId"));
+        // Act
+        var result = await _sut.Handle(command, CancellationToken.None);
 
-        _roleAssigner.AssignRolesAsync("newUserId", command.Roles!, default)
-            .Returns(Result.Failure(Error.Failure("Role.Assign.Failed", "No such role")));
-
-        var result = await _sut.Handle(command, default);
-
-        result.IsSuccess.Should().BeFalse();
+        // Assert
+        result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("User.Create.RoleAssignmentFailed");
-        result.Error.Description.Should().Contain("newUserId");
+        result.Error.Description.Should().Contain("role assignment failed");
     }
 
     [Fact]
-    public async Task Handle_ShouldReturnSuccess_WhenUserCreatedWithoutRoles()
+    public async Task Handle_ShouldReturnSuccess_WhenUserCreatedWithoutRole()
     {
-        var command = new CreateUserCommand("user", "pass", "", "", "", 
-            new List<string> {});
+        // Arrange
+        var command = new CreateUserCommand("testuser", "", "", "", 
+            "password", "");
+        _userCreator.CreateUserAsync(command, Arg.Any<CancellationToken>())
+            .Returns(Result.Success("new-user-id"));
 
-        _userCreator.CreateUserAsync(command, default)
-            .Returns(Result.Success("newUserId"));
+        // Act
+        var result = await _sut.Handle(command, CancellationToken.None);
 
-        var result = await _sut.Handle(command, default);
-
+        // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value.Should().Be("newUserId");
-
-        await _roleAssigner.DidNotReceiveWithAnyArgs()
-            .AssignRolesAsync(default!, default!, default);
+        result.Value.Should().Be("new-user-id");
+        await _roleAssigner.DidNotReceive()
+            .AssignRoleAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Handle_ShouldReturnSuccess_WhenUserCreatedWithRoles()
+    public async Task Handle_ShouldReturnSuccess_WhenUserCreatedAndRoleAssigned()
     {
-        var command = new CreateUserCommand("user", "pass", "", "", "", 
-            new[] { "Admin" });
-
-        _userCreator.CreateUserAsync(command, default)
-            .Returns(Result.Success("newUserId"));
-
-        _roleAssigner.AssignRolesAsync("newUserId", command.Roles!, default)
+        // Arrange
+        var command = new CreateUserCommand("testuser", "", "", "", 
+            "password", "admin");
+        _userCreator.CreateUserAsync(command, Arg.Any<CancellationToken>())
+            .Returns(Result.Success("new-user-id"));
+        _roleAssigner.AssignRoleAsync("new-user-id", "admin", Arg.Any<CancellationToken>())
             .Returns(Result.Success());
 
-        var result = await _sut.Handle(command, default);
+        // Act
+        var result = await _sut.Handle(command, CancellationToken.None);
 
+        // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value.Should().Be("newUserId");
+        result.Value.Should().Be("new-user-id");
     }
 
     [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenExceptionThrown()
+    public async Task Handle_ShouldReturnFailure_WhenExceptionIsThrown()
     {
-        var command = new CreateUserCommand("user", "pass", "", "", "", 
-            new List<string> {});
+        // Arrange
+        var command = new CreateUserCommand("testuser", "", "", "", 
+            "password", "");
+        _userCreator.CreateUserAsync(command, Arg.Any<CancellationToken>())
+            .Throws(new InvalidOperationException("unexpected error"));
 
-        _userCreator.CreateUserAsync(command, default)
-            .Throws(new Exception("DB connection failed"));
+        // Act
+        var result = await _sut.Handle(command, CancellationToken.None);
 
-        var result = await _sut.Handle(command, default);
-
-        result.IsSuccess.Should().BeFalse();
+        // Assert
+        result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("User.Create.Failed");
-        result.Error.Description.Should().Contain("DB connection failed");
+        result.Error.Description.Should().Contain("unexpected error");
+    }
+    [Fact]
+    public void Constructor_ShouldThrow_WhenUserCreatorIsNull()
+    {
+        // Act
+        Action act = () => new CreateUserCommandHandler(null!, Substitute.For<IOAuthRoleAssigner>());
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>()
+            .WithParameterName("userCreator");
+    }
+
+    [Fact]
+    public void Constructor_ShouldThrow_WhenRoleAssignerIsNull()
+    {
+        // Act
+        Action act = () => new CreateUserCommandHandler(Substitute.For<IOAuthUserCreator>(), null!);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>()
+            .WithParameterName("roleAssigner");
     }
 }
