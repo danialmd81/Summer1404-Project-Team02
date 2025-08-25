@@ -10,8 +10,8 @@ public class AuthLogoutService : IAuthLogoutService
 
     public AuthLogoutService(IHttpClientFactory httpClientFactory, IConfiguration configuration)
     {
-        _httpClientFactory = httpClientFactory;
-        _configuration = configuration;
+        _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));;
     }
 
     public async Task LogoutAsync(string? accessToken, string? refreshToken, CancellationToken ct = default)

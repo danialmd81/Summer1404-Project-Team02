@@ -10,8 +10,8 @@ public class AuthCredentialValidator : IAuthCredentialValidator
 
     public AuthCredentialValidator(IHttpClientFactory httpClientFactory, IConfiguration configuration)
     {
-        _httpClientFactory = httpClientFactory;
-        _configuration = configuration;
+        _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));;
     }
 
     public async Task<bool> ValidateCredentialsAsync(string username, string password, CancellationToken ct = default)

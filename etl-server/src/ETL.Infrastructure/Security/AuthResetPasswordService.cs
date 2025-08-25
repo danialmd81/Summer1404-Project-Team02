@@ -13,9 +13,9 @@ public class AuthRestPasswordService : IAuthRestPasswordService
 
     public AuthRestPasswordService(IHttpClientFactory httpClientFactory, IConfiguration configuration, IAdminTokenService adminTokenService)
     {
-        _httpClientFactory = httpClientFactory;
-        _configuration = configuration;
-        _adminTokenService = adminTokenService;
+        _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _adminTokenService = adminTokenService ?? throw new ArgumentNullException(nameof(adminTokenService));;
     }
 
     public async Task ResetPasswordAsync(string userId, string newPassword, CancellationToken ct = default)

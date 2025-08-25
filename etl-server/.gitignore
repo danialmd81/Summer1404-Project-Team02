@@ -88,6 +88,10 @@ _ReSharper.Caches
 coverage/
 *.lcov
 
+# Code coverage
+coverage.opencover.xml
+coverage.*.xml
+
 # Others
 *.DS_Store
 *.env

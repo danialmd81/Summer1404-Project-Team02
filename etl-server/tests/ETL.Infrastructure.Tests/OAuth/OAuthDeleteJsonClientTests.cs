@@ -1,13 +1,13 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using ETL.Application.Abstractions.Security;
+using ETL.Infrastructure.HttpClientFixture.Fixture;
 using ETL.Infrastructure.OAuth;
-using ETL.Infrastructure.Tests.OAuth.Fixture;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using NSubstitute;
 
-namespace ETL.Infrastructure.Tests.OAuth;
+namespace ETL.Infrastructure.HttpClientFixture;
 
 [Collection("HttpClient collection")]
 public class OAuthDeleteJsonClientTests

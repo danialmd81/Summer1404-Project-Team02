@@ -12,8 +12,8 @@ public class AdminTokenService : IAdminTokenService
 
     public AdminTokenService(IHttpClientFactory httpClientFactory, IConfiguration configuration)
     {
-        _httpClientFactory = httpClientFactory;
-        _configuration = configuration;
+        _httpClientFactory = httpClientFactory ??  throw new ArgumentNullException(nameof(httpClientFactory));
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));;
     }
 
     public async Task<string?> GetAdminAccessTokenAsync(CancellationToken ct = default)
