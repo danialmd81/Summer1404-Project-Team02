@@ -26,6 +26,7 @@ public static class DependencyInjection
                 });
 
         services.AddScoped<IOAuthUserCreator, OAuthUserCreator>();
+        services.AddScoped<IOAuthUserDeleter, OAuthUserDeleter>();
         services.AddScoped<IOAuthRoleAssigner, OAuthRoleAssigner>();
         services.AddScoped<IAdminTokenService, AdminTokenService>();
         services.AddScoped<IAuthCodeForTokenExchanger, AuthCodeForTokenExchanger>();

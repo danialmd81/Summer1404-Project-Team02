@@ -1,5 +1,7 @@
 ﻿using ETL.Application.Common;
+using ETL.Application.Common.Constants;
 using ETL.Application.User.Create;
+using ETL.Application.User.Delete;
 using ETL.Application.User.GetCurrent;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -26,6 +28,7 @@ public class UserController : ControllerBase
         return Ok(dto);
     }
 
+    [Authorize(Policy = Policy.CanCreateUser)]
     [HttpPost("create")]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserCommand command, CancellationToken ct)
     {
@@ -52,5 +55,26 @@ public class UserController : ControllerBase
         var location = Url.Action(null, "User", new { id = createdId }) ?? $"/api/user/{createdId}";
 
         return Created(location, new { id = createdId, message = $"User '{command.Username}' created." });
+    }
+
+    [Authorize]
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteUser(string id, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new DeleteUserCommand(id), ct);
+
+        if (result.IsFailure)
+        {
+            var err = result.Error;
+            return err.Type switch
+            {
+                ErrorType.Validation => BadRequest(new { error = err.Code, message = err.Description }),
+                ErrorType.NotFound => NotFound(new { error = err.Code, message = err.Description }),
+                ErrorType.Problem => StatusCode(500, new { error = err.Code, message = err.Description }),
+                _ => StatusCode(500, new { error = err.Code, message = err.Description })
+            };
+        }
+
+        return Ok(new { message = "User deleted successfully." });
     }
 }

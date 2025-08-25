@@ -5,6 +5,6 @@ public static class Policy
     public const string SystemAdminOnly = "SystemAdminOnly";
     public const string DataAdminOnly = "DataAdminOnly";
     public const string AnalystOnly = "AnalystOnly";
-    public const string CanManageUsers = "CanManageUsers";
+    public const string CanCreateUser = "CanCreateUser";
     public const string AuthenticatedUser = "AuthenticatedUser";
 }

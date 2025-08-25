@@ -24,7 +24,7 @@ namespace ETL.Infrastructure.UserServices
         {
             var adminToken = await _adminTokenService.GetAdminAccessTokenAsync(ct);
             if (string.IsNullOrEmpty(adminToken))
-                return Result.Failure(Error.Problem("Keycloak.AdminTokenMissing", "Could not obtain admin token"));
+                return Result.Failure(Error.Problem("OAuth.AdminTokenMissing", "Could not obtain admin token"));
 
             var httpClient = _httpFactory.CreateClient();
             var keycloakBaseUrl = _configuration["Authentication:KeycloakBaseUrl"]?.TrimEnd('/');
@@ -42,7 +42,7 @@ namespace ETL.Infrastructure.UserServices
                 if (!roleResp.IsSuccessStatusCode)
                 {
                     var body = await roleResp.Content.ReadAsStringAsync(ct);
-                    return Result.Failure(Error.NotFound("Keycloak.RoleNotFound", $"Role '{roleName}' not found: {roleResp.StatusCode} {body}"));
+                    return Result.Failure(Error.NotFound("OAuth.RoleNotFound", $"Role '{roleName}' not found: {roleResp.StatusCode} {body}"));
                 }
 
                 using var stream = await roleResp.Content.ReadAsStreamAsync(ct);
@@ -64,7 +64,7 @@ namespace ETL.Infrastructure.UserServices
             if (!assignResp.IsSuccessStatusCode)
             {
                 var body = await assignResp.Content.ReadAsStringAsync(ct);
-                return Result.Failure(Error.Problem("Keycloak.AssignRolesFailed", $"Assign roles failed: {assignResp.StatusCode} - {body}"));
+                return Result.Failure(Error.Problem("OAuth.AssignRolesFailed", $"Assign roles failed: {assignResp.StatusCode} - {body}"));
             }
 
             return Result.Success();

@@ -69,8 +69,8 @@ public class AuthController : ControllerBase
         return Ok(new { message = "Authentication successful" });
     }
 
-    [HttpPost("change-pass")]
     [Authorize]
+    [HttpPost("change-pass")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto request)
     {
         var result = await _mediator.Send(new ChangePasswordCommand(request, User));

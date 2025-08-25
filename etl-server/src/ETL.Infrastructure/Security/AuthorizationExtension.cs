@@ -19,7 +19,7 @@ public static class AuthorizationExtension
             options.AddPolicy(Policy.AnalystOnly, policy =>
                 policy.RequireRole(Policy.AnalystOnly));
 
-            options.AddPolicy(Policy.CanManageUsers, policy =>
+            options.AddPolicy(Policy.CanCreateUser, policy =>
                 policy.RequireRole(Role.SystemAdmin));
 
             options.AddPolicy(Policy.AuthenticatedUser, policy =>

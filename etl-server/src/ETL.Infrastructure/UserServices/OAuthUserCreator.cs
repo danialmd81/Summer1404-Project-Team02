@@ -24,7 +24,7 @@ namespace ETL.Infrastructure.UserServices
         {
             var adminToken = await _adminTokenService.GetAdminAccessTokenAsync(ct);
             if (string.IsNullOrEmpty(adminToken))
-                return Result.Failure<string>(Error.Problem("Keycloak.AdminTokenMissing", "Could not obtain admin token"));
+                return Result.Failure<string>(Error.Problem("OAuth.AdminTokenMissing", "Could not obtain admin token"));
 
             var httpClient = _httpFactory.CreateClient();
             var keycloakBaseUrl = _configuration["Authentication:KeycloakBaseUrl"]?.TrimEnd('/');
@@ -55,13 +55,13 @@ namespace ETL.Infrastructure.UserServices
             if (!response.IsSuccessStatusCode)
             {
                 var body = await response.Content.ReadAsStringAsync(ct);
-                return Result.Failure<string>(Error.Problem("Keycloak.CreateUserFailed", $"Create user failed: {response.StatusCode} - {body}"));
+                return Result.Failure<string>(Error.Problem("OAuth.CreateUserFailed", $"Create user failed: {response.StatusCode} - {body}"));
             }
 
             var location = response.Headers.Location;
             if (location == null)
             {
-                return Result.Failure<string>(Error.Problem("Keycloak.NoLocationHeader", "Keycloak did not return Location header for created user."));
+                return Result.Failure<string>(Error.Problem("OAuth.NoLocationHeader", "OAuth did not return Location header for created user."));
             }
 
             string newUserId;
@@ -72,7 +72,7 @@ namespace ETL.Infrastructure.UserServices
             }
             catch
             {
-                return Result.Failure<string>(Error.Problem("Keycloak.ParseUserIdFailed", "Failed to parse created user id from Location header."));
+                return Result.Failure<string>(Error.Problem("OAuth.ParseUserIdFailed", "Failed to parse created user id from Location header."));
             }
 
             return Result.Success(newUserId);
