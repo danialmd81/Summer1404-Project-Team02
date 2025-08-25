@@ -1,4 +1,4 @@
-﻿using ETL.Application.Abstractions;
+﻿using ETL.Application.Abstractions.UserServices;
 using ETL.Application.Common;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -8,12 +8,10 @@ namespace ETL.Application.User.Delete
     public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Result>
     {
         private readonly IOAuthUserDeleter _userDeleter;
-        private readonly ILogger<DeleteUserCommandHandler> _logger;
 
         public DeleteUserCommandHandler(IOAuthUserDeleter userDeleter, ILogger<DeleteUserCommandHandler> logger)
         {
-            _userDeleter = userDeleter;
-            _logger = logger;
+            _userDeleter = userDeleter ?? throw new ArgumentNullException(nameof(userDeleter));
         }
 
         public async Task<Result> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
@@ -25,8 +23,7 @@ namespace ETL.Application.User.Delete
 
             if (result.IsFailure)
             {
-                _logger.LogWarning("Failed to delete user {UserId} via OAuth: {ErrorCode} - {ErrorDesc}", request.UserId, result.Error.Code, result.Error.Description);
-                return result;
+                return Result.Failure(Error.Failure("User.Delete", $"Failed to delete user {request.UserId} via OAuth: {result.Error.Code} - {result.Error.Description}"));
             }
 
             return Result.Success();

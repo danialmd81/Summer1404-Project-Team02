@@ -3,4 +3,4 @@ using System.Security.Claims;
 using ETL.Application.Common.DTOs;
 using MediatR;
 
-public record GetUserProfileQuery(ClaimsPrincipal User) : IRequest<UserProfileDto>;
+public record GetUserProfileQuery(ClaimsPrincipal User) : IRequest<UserDto>;

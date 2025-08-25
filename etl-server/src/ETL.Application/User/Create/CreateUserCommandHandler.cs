@@ -1,4 +1,4 @@
-﻿using ETL.Application.Abstractions;
+﻿using ETL.Application.Abstractions.UserServices;
 using ETL.Application.Common;
 using MediatR;
 
@@ -11,8 +11,8 @@ namespace ETL.Application.User.Create
 
         public CreateUserCommandHandler(IOAuthUserCreator userCreator, IOAuthRoleAssigner roleAssigner)
         {
-            _userCreator = userCreator;
-            _roleAssigner = roleAssigner;
+            _userCreator = userCreator ?? throw new ArgumentNullException(nameof(userCreator));
+            _roleAssigner = roleAssigner ?? throw new ArgumentNullException(nameof(roleAssigner));
         }
 
         public async Task<Result<string>> Handle(CreateUserCommand request, CancellationToken cancellationToken)
@@ -28,13 +28,15 @@ namespace ETL.Application.User.Create
 
                 var newUserId = createResult.Value;
 
-                if (request.Roles is { } roles && roles.Any())
+                if (!string.IsNullOrWhiteSpace(request.Role))
                 {
-                    var assignResult = await _roleAssigner.AssignRolesAsync(newUserId, roles, cancellationToken);
+                    var assignResult = await _roleAssigner.AssignRoleAsync(newUserId, request.Role, cancellationToken);
                     if (assignResult.IsFailure)
                     {
-                        // Optional: try delete user here if you want to rollback
-                        return Result.Failure<string>(Error.Problem("User.Create.RoleAssignmentFailed", $"User created (id={newUserId}) but role assignment failed: {assignResult.Error.Description}"));
+                        return Result.Failure<string>(Error.Problem(
+                            "User.Create.RoleAssignmentFailed",
+                            $"User created (id={newUserId}) but role assignment failed: {assignResult.Error.Code} - {assignResult.Error.Description}"
+                        ));
                     }
                 }
 

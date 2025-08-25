@@ -17,8 +17,8 @@ public class AuthController : ControllerBase
 
     public AuthController(IMediator mediator, IConfiguration configuration)
     {
-        _mediator = mediator;
-        _configuration = configuration;
+        _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
     }
 
     [HttpGet("login")]
