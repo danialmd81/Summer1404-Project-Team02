@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ETL.API.Controllers;
-[Route("api/[controller]")]
+[Route("api/role")]
 [ApiController]
 public class RoleController : ControllerBase
 {

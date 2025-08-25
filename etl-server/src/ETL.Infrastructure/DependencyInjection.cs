@@ -30,6 +30,7 @@ public static class DependencyInjection
         services.AddScoped<IOAuthGetJson, OAuthGetJsonClient>();
         services.AddScoped<IOAuthGetJsonArray, OAuthGetJsonArrayClient>();
         services.AddScoped<IOAuthPostJson, OAuthPostJsonClient>();
+        services.AddScoped<IOAuthPutJson, OAuthPutJsonClient>();
         services.AddScoped<IOAuthDeleteJson, OAuthDeleteJsonClient>();
         services.AddScoped<IOAuthPostJsonWithResponse, OAuthPostJsonWithResponseClient>();
 
@@ -37,6 +38,7 @@ public static class DependencyInjection
         services.AddScoped<IOAuthAllUserReader, OAuthAllUserReader>();
         services.AddScoped<IOAuthUserRoleGetter, OAuthUserRoleGetter>();
         services.AddScoped<IOAuthUserCreator, OAuthUserCreator>();
+        services.AddScoped<IOAuthUserUpdater, OAuthUserUpdater>();
         services.AddScoped<IOAuthUserDeleter, OAuthUserDeleter>();
         services.AddScoped<IRoleRemover, RoleRemover>();
         services.AddScoped<IOAuthRoleAssigner, OAuthRoleAssigner>();
