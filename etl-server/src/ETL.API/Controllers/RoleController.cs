@@ -11,6 +11,6 @@ public class RoleController : ControllerBase
     [HttpGet("all")]
     public IActionResult GetRoles()
     {
-        return Ok(Role.GetAllRoles());
+        return Ok(new { Role = Role.GetAllRoles() });
     }
 }
