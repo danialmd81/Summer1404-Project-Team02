@@ -80,7 +80,7 @@ public class UserController : ControllerBase
 
     [Authorize]
     [HttpPut("edit/{id}")]
-    public async Task<IActionResult> EditUser(string id, [FromBody] EditUserCommand request, CancellationToken ct)
+    public async Task<IActionResult> EditUser([FromBody] EditUserCommand request, CancellationToken ct)
     {
         var result = await _mediator.Send(request, ct);
 

@@ -22,8 +22,9 @@ public class AuthController : ControllerBase
     }
 
     [HttpGet("login")]
-    public IActionResult Login([FromQuery] string redirectPath)
+    public IActionResult Login([FromQuery] string? redirectPath)
     {
+
         var authUrl = $"{_configuration["Authentication:Authority"]}/protocol/openid-connect/auth";
         var clientId = _configuration["Authentication:ClientId"];
         var redirectUri = $"{_configuration["Authentication:RedirectUri"]}/{redirectPath}";
@@ -60,7 +61,7 @@ public class AuthController : ControllerBase
             HttpOnly = true,
             Secure = true,
             SameSite = SameSiteMode.Strict,
-            Expires = DateTime.UtcNow.AddSeconds(tokens.RefreshExpiresIn)
+            Expires = DateTime.UtcNow.AddSeconds(tokens.RefreshExpiresIn),
         };
 
         Response.Cookies.Append("access_token", tokens.AccessToken ?? string.Empty, accessCookieOptions);
