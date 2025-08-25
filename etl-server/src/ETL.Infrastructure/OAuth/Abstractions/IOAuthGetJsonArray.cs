@@ -1,10 +1,9 @@
 ﻿using System.Text.Json;
 using ETL.Application.Common;
 
-namespace ETL.Infrastructure.OAuth.Abstractions
+namespace ETL.Infrastructure.OAuth.Abstractions;
+
+public interface IOAuthGetJsonArray
 {
-    public interface IOAuthGetJsonArray
-    {
-        Task<Result<List<JsonElement>>> GetJsonArrayAsync(string relativePath, CancellationToken ct = default);
-    }
+    Task<Result<List<JsonElement>>> GetJsonArrayAsync(string relativePath, CancellationToken ct = default);
 }

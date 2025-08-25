@@ -1,29 +1,28 @@
 ﻿using ETL.Application.Abstractions.UserServices;
 using ETL.Application.Common;
 
-namespace ETL.Infrastructure.UserServices
+namespace ETL.Infrastructure.UserServices;
+
+public class OAuthUserRoleChanger : IOAuthUserRoleChanger
 {
-    public class OAuthUserRoleChanger : IOAuthUserRoleChanger
+    private readonly IRoleRemover _roleRemover;
+    private readonly IOAuthRoleAssigner _roleAssigner;
+
+    public OAuthUserRoleChanger(IRoleRemover roleRemover, IOAuthRoleAssigner roleAssigner)
     {
-        private readonly IRoleRemover _roleRemover;
-        private readonly IOAuthRoleAssigner _roleAssigner;
+        _roleRemover = roleRemover ?? throw new ArgumentNullException(nameof(roleRemover));
+        _roleAssigner = roleAssigner ?? throw new ArgumentNullException(nameof(roleAssigner));
+    }
 
-        public OAuthUserRoleChanger(IRoleRemover roleRemover, IOAuthRoleAssigner roleAssigner)
-        {
-            _roleRemover = roleRemover ?? throw new ArgumentNullException(nameof(roleRemover));
-            _roleAssigner = roleAssigner ?? throw new ArgumentNullException(nameof(roleAssigner));
-        }
+    public async Task<Result> ChangeRoleAsync(string userId, string newRoleName, CancellationToken ct = default)
+    {
+        var rm = await _roleRemover.RemoveAllRealmRolesAsync(userId, ct);
+        if (rm.IsFailure) return rm;
 
-        public async Task<Result> ChangeRoleAsync(string userId, string newRoleName, CancellationToken ct = default)
-        {
-            var rm = await _roleRemover.RemoveAllRealmRolesAsync(userId, ct);
-            if (rm.IsFailure) return rm;
+        var assign = await _roleAssigner.AssignRoleAsync(userId, newRoleName, ct);
+        if (assign.IsFailure)
+            return Result.Failure(Error.Problem("User.ChangeRole.AssignFailed", $"Failed to assign role '{newRoleName}': {assign.Error.Code} - {assign.Error.Description}"));
 
-            var assign = await _roleAssigner.AssignRoleAsync(userId, newRoleName, ct);
-            if (assign.IsFailure)
-                return Result.Failure(Error.Problem("User.ChangeRole.AssignFailed", $"Failed to assign role '{newRoleName}': {assign.Error.Code} - {assign.Error.Description}"));
-
-            return Result.Success();
-        }
+        return Result.Success();
     }
 }

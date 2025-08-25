@@ -1,9 +1,8 @@
 ﻿using ETL.Application.Common;
 
-namespace ETL.Application.Abstractions.UserServices
+namespace ETL.Application.Abstractions.UserServices;
+
+public interface IOAuthUserRoleGetter
 {
-    public interface IOAuthUserRoleGetter
-    {
-        Task<Result<string?>> GetRoleForUserAsync(string userId, CancellationToken ct = default);
-    }
+    Task<Result<string?>> GetRoleForUserAsync(string userId, CancellationToken ct = default);
 }

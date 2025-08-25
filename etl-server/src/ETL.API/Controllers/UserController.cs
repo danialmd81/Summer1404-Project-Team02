@@ -3,6 +3,7 @@ using ETL.Application.Common.Constants;
 using ETL.Application.User.ChangeRole;
 using ETL.Application.User.Create;
 using ETL.Application.User.Delete;
+using ETL.Application.User.Edit;
 using ETL.Application.User.GetAll;
 using ETL.Application.User.GetById;
 using ETL.Application.User.GetCurrent;
@@ -13,7 +14,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ETL.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/user")]
 public class UserController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -75,6 +76,18 @@ public class UserController : ControllerBase
             return this.ToActionResult(result.Error);
 
         return Ok(new { message = "User role updated." });
+    }
+
+    [Authorize]
+    [HttpPut("edit/{id}")]
+    public async Task<IActionResult> EditUser(string id, [FromBody] EditUserCommand request, CancellationToken ct)
+    {
+        var result = await _mediator.Send(request, ct);
+
+        if (result.IsFailure)
+            return this.ToActionResult(result.Error);
+
+        return Ok(new { message = "User updated." });
     }
 
     [Authorize(Policy = Policy.CanDeleteUser)]
