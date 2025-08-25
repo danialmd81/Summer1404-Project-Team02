@@ -35,7 +35,6 @@ public static class OAuthExtension
 
                 options.Events = new JwtBearerEvents
                 {
-                    // First, read the token from the cookie
                     OnMessageReceived = context =>
                     {
                         if (context.Request.Cookies.TryGetValue(cookieName, out var token))
@@ -44,7 +43,7 @@ public static class OAuthExtension
                         }
                         return Task.CompletedTask;
                     },
-                    // Then, after validating the token, parse the roles
+
                     OnTokenValidated = context =>
                     {
                         if (context.Principal?.Identity is ClaimsIdentity identity &&
@@ -56,7 +55,6 @@ public static class OAuthExtension
 
                             foreach (var role in realmRoles)
                             {
-                                // Add each role as a new claim with the standard Role type
                                 identity.AddClaim(new Claim(ClaimTypes.Role, role.GetString()!));
                             }
                         }
