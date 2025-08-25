@@ -15,9 +15,6 @@ public class EditUserCommandHandler : IRequestHandler<EditUserCommand, Result>
 
     public async Task<Result> Handle(EditUserCommand request, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.UserId))
-            return Result.Failure(Error.NotFound("User.InvalidId", "User id is required."));
-
         var hasChanges = request.Username is not null
                       || request.Email is not null
                       || request.FirstName is not null
