@@ -17,6 +17,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{B63C1528
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ETL.Application.Tests", "tests\ETL.Application.Tests\ETL.Application.Tests.csproj", "{AA2534B9-A513-4504-A6CF-E61012EA85A8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ETL.Infrastructure.Tests", "tests\ETL.Infrastructure.Tests\ETL.Infrastructure.Tests.csproj", "{D1CDDBDB-165F-4C52-9372-402EB7AA7272}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,10 @@ Global
 		{AA2534B9-A513-4504-A6CF-E61012EA85A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AA2534B9-A513-4504-A6CF-E61012EA85A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AA2534B9-A513-4504-A6CF-E61012EA85A8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1CDDBDB-165F-4C52-9372-402EB7AA7272}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1CDDBDB-165F-4C52-9372-402EB7AA7272}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1CDDBDB-165F-4C52-9372-402EB7AA7272}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1CDDBDB-165F-4C52-9372-402EB7AA7272}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -53,6 +59,7 @@ Global
 		{F76B60E7-42F3-48C0-AF00-00739AB9E68E} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{13A612A7-6ECE-4F36-A5BC-DDC13B3D289E} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{AA2534B9-A513-4504-A6CF-E61012EA85A8} = {B63C1528-4FE2-443D-AFCE-3735CEE63D55}
+		{D1CDDBDB-165F-4C52-9372-402EB7AA7272} = {B63C1528-4FE2-443D-AFCE-3735CEE63D55}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {308B1B93-7866-4A6D-9726-2BF9899312DE}
