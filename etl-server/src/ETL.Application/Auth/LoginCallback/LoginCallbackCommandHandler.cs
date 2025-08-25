@@ -11,7 +11,7 @@ public class CallbackCommandHandler : IRequestHandler<LoginCallbackCommand, Resu
 
     public CallbackCommandHandler(IAuthCodeForTokenExchanger exchanger)
     {
-        _exchanger = exchanger;
+        _exchanger = exchanger ?? throw new ArgumentNullException(nameof(exchanger));
     }
 
     public async Task<Result<TokenResponse>> Handle(LoginCallbackCommand request, CancellationToken cancellationToken)

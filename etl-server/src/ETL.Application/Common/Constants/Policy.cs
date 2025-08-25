@@ -2,9 +2,10 @@
 
 public static class Policy
 {
-    public const string SystemAdminOnly = "SystemAdminOnly";
-    public const string DataAdminOnly = "DataAdminOnly";
-    public const string AnalystOnly = "AnalystOnly";
-    public const string CanManageUsers = "CanManageUsers";
-    public const string AuthenticatedUser = "AuthenticatedUser";
+    public const string CanCreateUser = "CanCreateUser";
+    public const string CanReadAllUsers = "CanReadAllUsers";
+    public const string CanChangeUserRole = "CanChangeUserRole";
+    public const string CanDeleteUser = "CanDeleteUser";
+    public const string CanReadUser = "CanReadUser";
+    public const string CanReadRoles = "CanReadRoles";
 }

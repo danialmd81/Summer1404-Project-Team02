@@ -1,5 +1,10 @@
-﻿using ETL.Application.Common;
+﻿using ETL.API.Infrastructure;
+using ETL.Application.Common.Constants;
+using ETL.Application.User.ChangeRole;
 using ETL.Application.User.Create;
+using ETL.Application.User.Delete;
+using ETL.Application.User.GetAll;
+using ETL.Application.User.GetById;
 using ETL.Application.User.GetCurrent;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -15,7 +20,7 @@ public class UserController : ControllerBase
 
     public UserController(IMediator mediator)
     {
-        _mediator = mediator;
+        _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
     }
 
     [Authorize]
@@ -26,6 +31,23 @@ public class UserController : ControllerBase
         return Ok(dto);
     }
 
+    [Authorize(Policy = Policy.CanReadUser)]
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetUserById(string id, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetUserByIdQuery(id), ct);
+        return this.FromResult(result);
+    }
+
+    [Authorize(Policy = Policy.CanReadAllUsers)]
+    [HttpGet("all")]
+    public async Task<IActionResult> GetAllUsers([FromQuery] int? first, [FromQuery] int? max, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetAllUsersQuery(first, max), ct);
+        return this.FromResult(result);
+    }
+
+    [Authorize(Policy = Policy.CanCreateUser)]
     [HttpPost("create")]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserCommand command, CancellationToken ct)
     {
@@ -35,22 +57,31 @@ public class UserController : ControllerBase
         var result = await _mediator.Send(command, ct);
 
         if (result.IsFailure)
-        {
-            var err = result.Error;
-            return err.Type switch
-            {
-                ErrorType.Validation => BadRequest(new { error = err.Code, message = err.Description }),
-                ErrorType.NotFound => NotFound(new { error = err.Code, message = err.Description }),
-                ErrorType.Conflict => Conflict(new { error = err.Code, message = err.Description }),
-                ErrorType.Problem => StatusCode(500, new { error = err.Code, message = err.Description }),
-                _ => StatusCode(500, new { error = err.Code, message = err.Description })
-            };
-        }
+            return this.ToActionResult(result.Error);
 
         var createdId = result.Value;
-
         var location = Url.Action(null, "User", new { id = createdId }) ?? $"/api/user/{createdId}";
 
         return Created(location, new { id = createdId, message = $"User '{command.Username}' created." });
+    }
+
+    [Authorize(Policy = Policy.CanChangeUserRole)]
+    [HttpPatch("/change-role")]
+    public async Task<IActionResult> ChangeUserRole([FromBody] ChangeUserRoleCommand request, CancellationToken ct)
+    {
+        var result = await _mediator.Send(request, ct);
+
+        if (result.IsFailure)
+            return this.ToActionResult(result.Error);
+
+        return Ok(new { message = "User role updated." });
+    }
+
+    [Authorize(Policy = Policy.CanDeleteUser)]
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteUser(string id, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new DeleteUserCommand(id), ct);
+        return this.FromResult(result);
     }
 }

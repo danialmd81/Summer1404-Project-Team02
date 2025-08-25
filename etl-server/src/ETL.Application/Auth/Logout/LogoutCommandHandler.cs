@@ -10,7 +10,7 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>
 
     public LogoutCommandHandler(IAuthLogoutService logoutService)
     {
-        _logoutService = logoutService;
+        _logoutService = logoutService ?? throw new ArgumentNullException(nameof(logoutService));
     }
 
     public async Task<Result> Handle(LogoutCommand request, CancellationToken cancellationToken)

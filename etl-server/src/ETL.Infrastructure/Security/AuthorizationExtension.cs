@@ -10,20 +10,23 @@ public static class AuthorizationExtension
     {
         services.AddAuthorization(options =>
         {
-            options.AddPolicy(Policy.SystemAdminOnly, policy =>
+            options.AddPolicy(Policy.CanCreateUser, policy =>
                 policy.RequireRole(Role.SystemAdmin));
 
-            options.AddPolicy(Policy.DataAdminOnly, policy =>
-                policy.RequireRole(Role.DataAdmin));
-
-            options.AddPolicy(Policy.AnalystOnly, policy =>
-                policy.RequireRole(Policy.AnalystOnly));
-
-            options.AddPolicy(Policy.CanManageUsers, policy =>
+            options.AddPolicy(Policy.CanReadAllUsers, policy =>
                 policy.RequireRole(Role.SystemAdmin));
 
-            options.AddPolicy(Policy.AuthenticatedUser, policy =>
-                policy.RequireAuthenticatedUser());
+            options.AddPolicy(Policy.CanChangeUserRole, policy =>
+                policy.RequireRole(Role.SystemAdmin));
+
+            options.AddPolicy(Policy.CanDeleteUser, policy =>
+                policy.RequireRole(Role.SystemAdmin));
+
+            options.AddPolicy(Policy.CanReadUser, policy =>
+                policy.RequireRole(Role.SystemAdmin));
+
+            options.AddPolicy(Policy.CanReadRoles, policy =>
+                policy.RequireRole(Role.SystemAdmin));
         });
 
         return services;

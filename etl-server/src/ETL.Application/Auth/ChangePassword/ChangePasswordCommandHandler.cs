@@ -12,8 +12,8 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
 
     public ChangePasswordCommandHandler(IAuthCredentialValidator credentialValidator, IAuthRestPasswordService restPasswordService)
     {
-        _credentialValidator = credentialValidator;
-        _restPasswordService = restPasswordService;
+        _credentialValidator = credentialValidator ?? throw new ArgumentNullException(nameof(credentialValidator));
+        _restPasswordService = restPasswordService ?? throw new ArgumentNullException(nameof(restPasswordService));
     }
 
     public async Task<Result> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)

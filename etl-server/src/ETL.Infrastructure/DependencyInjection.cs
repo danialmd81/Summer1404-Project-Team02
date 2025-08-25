@@ -1,5 +1,7 @@
-﻿using ETL.Application.Abstractions;
-using ETL.Application.Abstractions.Security;
+﻿using ETL.Application.Abstractions.Security;
+using ETL.Application.Abstractions.UserServices;
+using ETL.Infrastructure.OAuth;
+using ETL.Infrastructure.OAuth.Abstractions;
 using ETL.Infrastructure.Security;
 using ETL.Infrastructure.UserServices;
 using Microsoft.Extensions.Configuration;
@@ -25,13 +27,26 @@ public static class DependencyInjection
                     };
                 });
 
+        services.AddScoped<IOAuthGetJson, OAuthGetJsonClient>();
+        services.AddScoped<IOAuthGetJsonArray, OAuthGetJsonArrayClient>();
+        services.AddScoped<IOAuthPostJson, OAuthPostJsonClient>();
+        services.AddScoped<IOAuthDeleteJson, OAuthDeleteJsonClient>();
+        services.AddScoped<IOAuthPostJsonWithResponse, OAuthPostJsonWithResponseClient>();
+
+        services.AddScoped<IOAuthUserReader, OAuthUserReader>();
+        services.AddScoped<IOAuthAllUserReader, OAuthAllUserReader>();
+        services.AddScoped<IOAuthUserRoleGetter, OAuthUserRoleGetter>();
         services.AddScoped<IOAuthUserCreator, OAuthUserCreator>();
+        services.AddScoped<IOAuthUserDeleter, OAuthUserDeleter>();
+        services.AddScoped<IRoleRemover, RoleRemover>();
         services.AddScoped<IOAuthRoleAssigner, OAuthRoleAssigner>();
+        services.AddScoped<IOAuthUserRoleChanger, OAuthUserRoleChanger>();
         services.AddScoped<IAdminTokenService, AdminTokenService>();
         services.AddScoped<IAuthCodeForTokenExchanger, AuthCodeForTokenExchanger>();
         services.AddScoped<IAuthCredentialValidator, AuthCredentialValidator>();
         services.AddScoped<IAuthRestPasswordService, AuthRestPasswordService>();
         services.AddScoped<IAuthLogoutService, AuthLogoutService>();
+
 
         return services;
     }

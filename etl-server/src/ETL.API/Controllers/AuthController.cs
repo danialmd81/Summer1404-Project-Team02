@@ -17,8 +17,8 @@ public class AuthController : ControllerBase
 
     public AuthController(IMediator mediator, IConfiguration configuration)
     {
-        _mediator = mediator;
-        _configuration = configuration;
+        _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
     }
 
     [HttpGet("login")]
@@ -69,8 +69,8 @@ public class AuthController : ControllerBase
         return Ok(new { message = "Authentication successful" });
     }
 
-    [HttpPost("change-pass")]
     [Authorize]
+    [HttpPost("change-pass")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto request)
     {
         var result = await _mediator.Send(new ChangePasswordCommand(request, User));
