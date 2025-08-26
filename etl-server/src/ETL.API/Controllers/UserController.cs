@@ -52,7 +52,7 @@ public class UserController : ControllerBase
     [HttpPost("create")]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserCommand request, CancellationToken ct)
     {
-        var result = await _mediator.Send(command, ct);
+        var result = await _mediator.Send(request, ct);
 
         if (result.IsFailure)
             return this.ToActionResult(result.Error);
@@ -60,7 +60,7 @@ public class UserController : ControllerBase
         var createdId = result.Value;
         var location = Url.Action(null, "User", new { id = createdId }) ?? $"/api/user/{createdId}";
 
-        return Created(location, new { id = createdId, message = $"User '{command.Username}' created." });
+        return Created(location, new { id = createdId, message = $"User '{request.Username}' created." });
     }
 
     [Authorize(Policy = Policy.CanChangeUserRole)]
