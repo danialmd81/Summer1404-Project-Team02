@@ -1,7 +1,7 @@
-﻿namespace ETL.Infrastructure.HttpClientFixture.Fixture;
+﻿namespace ETL.Infrastructure.Tests.HttpClientFixture;
 
-[CollectionDefinition("HttpClient collection")]
+[CollectionDefinition("HttpClient collection", DisableParallelization = true)]
 public class HttpClientCollection : ICollectionFixture<HttpClientTestFixture>
 {
-    
+
 }

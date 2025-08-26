@@ -67,7 +67,7 @@ public class OAuthRoleAssignerTests
         // Arrange
         var userId = "u1";
         var roleName = "admin";
-        
+
         _getJson.GetJsonAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(Result.Failure<JsonElement>(Error.NotFound("err", "msg"))));
 

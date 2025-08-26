@@ -1,9 +1,8 @@
 ﻿using System.Net;
-using System.Net.Http.Json;
 using System.Text.Json;
 using ETL.Application.Common.DTOs;
 using ETL.Infrastructure.Security;
-using ETL.Infrastructure.HttpClientFixture.Fixture;
+using ETL.Infrastructure.Tests.HttpClientFixture;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using NSubstitute;

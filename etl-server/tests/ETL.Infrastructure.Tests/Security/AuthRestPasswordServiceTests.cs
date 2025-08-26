@@ -2,7 +2,7 @@
 using System.Text.Json;
 using ETL.Application.Abstractions.Security;
 using ETL.Infrastructure.Security;
-using ETL.Infrastructure.HttpClientFixture.Fixture;
+using ETL.Infrastructure.Tests.HttpClientFixture;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using NSubstitute;
@@ -103,7 +103,7 @@ public class AuthRestPasswordServiceTests
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*reset error*");
     }
-    
+
     [Fact]
     public async Task ResetPasswordAsync_ShouldSendCorrectPayload()
     {

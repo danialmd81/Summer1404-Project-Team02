@@ -60,6 +60,6 @@ public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, Result<
             user.Role = roleResult.Value;
         }
 
-        return Result.Success<IEnumerable<UserDto>>(users);
+        return Result.Success<IEnumerable<UserDto>>(users.Where(u => u.Role is not null));
     }
 }

@@ -1,9 +1,9 @@
 ﻿using System.Net;
 using ETL.Infrastructure.Security;
-using ETL.Infrastructure.HttpClientFixture.Fixture;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using NSubstitute;
+using ETL.Infrastructure.Tests.HttpClientFixture;
 
 namespace ETL.Infrastructure.Tests.Security;
 

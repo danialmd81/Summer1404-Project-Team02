@@ -1,13 +1,12 @@
 ﻿using System.Net;
-using System.Net.Http.Json;
 using ETL.Application.Abstractions.Security;
-using ETL.Infrastructure.HttpClientFixture.Fixture;
 using ETL.Infrastructure.OAuth;
+using ETL.Infrastructure.Tests.HttpClientFixture;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using NSubstitute;
 
-namespace ETL.Infrastructure.HttpClientFixture;
+namespace ETL.Infrastructure.Tests.OAuth;
 
 [Collection("HttpClient collection")]
 public class OAuthPostJsonClientTests

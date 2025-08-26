@@ -1,8 +1,5 @@
 ﻿using System.Net;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
-namespace ETL.Infrastructure.HttpClientFixture.Fixture;
+namespace ETL.Infrastructure.Tests.HttpClientFixture;
 public class HttpClientTestFixture
 {
     public FakeHttpMessageHandler Handler { get; } = new FakeHttpMessageHandler();
@@ -43,8 +40,8 @@ public class HttpClientTestFixture
             {
                 Content = new StringContent(_body)
             };
-            
+
         }
-        
+
     }
 }

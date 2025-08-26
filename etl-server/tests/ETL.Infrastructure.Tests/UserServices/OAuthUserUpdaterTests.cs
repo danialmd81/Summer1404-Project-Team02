@@ -51,7 +51,7 @@ public class OAuthUserUpdaterTests
     [Fact]
     public async Task UpdateUserAsync_ShouldReturnFailure_WhenPutFails()
     {
-        var cmd = new EditUserCommand("u1", "", "test@example.com", "", "" );
+        var cmd = new EditUserCommand("u1", "", "test@example.com", "", "");
         var error = Error.Problem("err", "failed");
 
         _putJson.PutJsonAsync(Arg.Any<string>(), Arg.Any<Dictionary<string, object?>>(), Arg.Any<CancellationToken>())

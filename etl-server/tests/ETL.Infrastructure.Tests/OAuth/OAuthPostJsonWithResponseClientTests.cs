@@ -1,12 +1,12 @@
 ﻿using System.Net;
 using ETL.Application.Abstractions.Security;
-using ETL.Infrastructure.HttpClientFixture.Fixture;
 using ETL.Infrastructure.OAuth;
+using ETL.Infrastructure.Tests.HttpClientFixture;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using NSubstitute;
 
-namespace ETL.Infrastructure.HttpClientFixture;
+namespace ETL.Infrastructure.Tests.OAuth;
 
 [Collection("HttpClient collection")]
 public class OAuthPostJsonWithResponseClientTests
@@ -32,7 +32,7 @@ public class OAuthPostJsonWithResponseClientTests
 
         _sut = new OAuthPostJsonWithResponseClient(httpFactory, _configuration, _adminTokenService);
     }
-    
+
     [Fact]
     public async Task PostJsonForResponseAsync_ShouldReturnSuccess_WhenHttpResponseIsSuccessful()
     {
@@ -79,7 +79,7 @@ public class OAuthPostJsonWithResponseClientTests
         result.IsSuccess.Should().BeTrue();
         result.Value.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
-    
+
     // Constructor null-check tests
     [Fact]
     public void Constructor_ShouldThrowArgumentNullException_WhenHttpFactoryIsNull()

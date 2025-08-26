@@ -1,13 +1,12 @@
 ﻿using System.Net;
-using System.Net.Http.Json;
 using ETL.Application.Abstractions.Security;
-using ETL.Infrastructure.HttpClientFixture.Fixture;
 using ETL.Infrastructure.OAuth;
+using ETL.Infrastructure.Tests.HttpClientFixture;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using NSubstitute;
 
-namespace ETL.Infrastructure.HttpClientFixture;
+namespace ETL.Infrastructure.Tests.OAuth;
 
 [Collection("HttpClient collection")]
 public class OAuthDeleteJsonClientTests
@@ -93,7 +92,7 @@ public class OAuthDeleteJsonClientTests
         _fixture.Handler.LastRequest!.Method.Should().Be(HttpMethod.Delete);
         _fixture.Handler.LastRequest!.RequestUri!.ToString().Should().Contain("/users/123");
     }
-    
+
     [Fact]
     public void Constructor_ShouldThrowArgumentNullException_WhenHttpFactoryIsNull()
     {

@@ -91,7 +91,7 @@ public class OAuthAllUserReaderTests
 
         // Assert
         await _getArray.Received(1).GetJsonArrayAsync(
-            Arg.Is<string>(s => s.Contains("first=5") && s.Contains("max=10")), 
+            Arg.Is<string>(s => s.Contains("first=5") && s.Contains("max=10")),
             Arg.Any<CancellationToken>());
     }
 
