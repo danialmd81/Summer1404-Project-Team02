@@ -24,9 +24,6 @@ export class AuthCallbackComponent implements OnInit {
       this.authService.exchangeCodeForSession(code, '/dashboard').subscribe({
         // next: () => this.router.navigate(['/dashboard']),
         // error: () => this.router.navigate(['/'])
-        next: (response) => {
-          console.log(response);
-        }
       });
     } else {
       // this.router.navigate(['/']);
