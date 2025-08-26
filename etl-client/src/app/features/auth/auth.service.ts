@@ -43,7 +43,7 @@ export class AuthService {
   }
 
   public getLoginUrl(): Observable<{ redirectUrl: string }> {
-    return this.http.get<{ redirectUrl: string }>('/auth/login?redirectPath=%2Fauth%2Fcallback');
+    return this.http.get<{ redirectUrl: string }>('/auth/login?redirectPath=/auth/callback');
   }
 
   public exchangeCodeForSession(code: string, redirectPath: string) {
