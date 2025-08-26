@@ -50,7 +50,7 @@ public class UserController : ControllerBase
 
     [Authorize(Policy = Policy.CanCreateUser)]
     [HttpPost("create")]
-    public async Task<IActionResult> CreateUser([FromBody] CreateUserCommand command, CancellationToken ct)
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserCommand request, CancellationToken ct)
     {
         var result = await _mediator.Send(command, ct);
 
