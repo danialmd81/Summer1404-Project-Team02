@@ -52,9 +52,6 @@ public class UserController : ControllerBase
     [HttpPost("create")]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserCommand command, CancellationToken ct)
     {
-        if (command is null)
-            return BadRequest(new { error = "User.Create.InvalidRequest", message = "Request body is required." });
-
         var result = await _mediator.Send(command, ct);
 
         if (result.IsFailure)
