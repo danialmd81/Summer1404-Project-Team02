@@ -1,0 +1,34 @@
+﻿using ETL.Application.Common.Constants;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace ETL.Infrastructure.Security;
+
+public static class AuthorizationExtension
+{
+    public static IServiceCollection AddPolicyAuthorization(this IServiceCollection services, IConfiguration config)
+    {
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy(Policy.CanCreateUser, policy =>
+                policy.RequireRole(Role.SystemAdmin));
+
+            options.AddPolicy(Policy.CanReadAllUsers, policy =>
+                policy.RequireRole(Role.SystemAdmin));
+
+            options.AddPolicy(Policy.CanChangeUserRole, policy =>
+                policy.RequireRole(Role.SystemAdmin));
+
+            options.AddPolicy(Policy.CanDeleteUser, policy =>
+                policy.RequireRole(Role.SystemAdmin));
+
+            options.AddPolicy(Policy.CanReadUser, policy =>
+                policy.RequireRole(Role.SystemAdmin));
+
+            options.AddPolicy(Policy.CanReadRoles, policy =>
+                policy.RequireRole(Role.SystemAdmin));
+        });
+
+        return services;
+    }
+}
