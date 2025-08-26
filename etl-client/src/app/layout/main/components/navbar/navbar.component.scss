@@ -1,0 +1,26 @@
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: calc(100% - 50px);
+  padding-block: 20px;
+  margin-inline: auto;
+
+  .nav-list {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .nav-signin-btn {
+    width: 100px;
+    flex-shrink: 0;
+    min-width: fit-content;
+
+    & > button {
+      flex-shrink: 0;
+      width: 100px !important;
+    }
+  }
+}

@@ -1,0 +1,8 @@
+<p-button class="nav-signin-btn" (onClick)="login()" [disabled]="loading">
+  @if (loading) {
+    <p-progress-spinner strokeWidth="4" fill="transparent" animationDuration=".5s"
+                        [style]="{ width: '20px', height: '20px',stroke:'white' }"/>
+  } @else {
+    sign-in
+  }
+</p-button>
