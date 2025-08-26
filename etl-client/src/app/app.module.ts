@@ -8,6 +8,9 @@ import {appRoutes} from './app.routes';
 import {CustomPreset} from './theme/mypreset';
 import {MainModule} from './layout/main/main.module';
 import {DashboardModule} from './layout/dashboard/dashboard.module';
+import {HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi} from '@angular/common/http';
+import {BaseUrlInterceptor} from './features/auth/interceptors/base-url.interceptor';
+import {CredentialsInterceptor} from './features/auth/interceptors/credentials.interceptor';
 
 
 @NgModule({
@@ -19,7 +22,17 @@ import {DashboardModule} from './layout/dashboard/dashboard.module';
       theme: {
         preset: CustomPreset
       }
-    })]
+    }), provideHttpClient(withInterceptorsFromDi()),
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: BaseUrlInterceptor,
+      multi: true
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: CredentialsInterceptor,
+      multi: true
+    }]
 })
 export class AppModule {
 }
