@@ -4,7 +4,7 @@ import {Observable} from 'rxjs';
 
 @Injectable()
 export class BaseUrlInterceptor implements HttpInterceptor {
-  private readonly _baseUrl = "https://192.168.25.175:7238/api";
+  private readonly _baseUrl = "http://localhost:5000/api";
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     if (!/^https?:\/\//i.test(req.url)) {
