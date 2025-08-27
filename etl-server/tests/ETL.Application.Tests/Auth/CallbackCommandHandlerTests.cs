@@ -1,92 +1,101 @@
 ﻿using ETL.Application.Abstractions.Security;
 using ETL.Application.Auth.LoginCallback;
+using ETL.Application.Common;
 using ETL.Application.Common.DTOs;
 using FluentAssertions;
 using NSubstitute;
 
-namespace ETL.Application.Tests.Auth;
-
-public class CallbackCommandHandlerTests
+namespace ETL.Application.Tests.Auth
 {
-    private readonly IAuthCodeForTokenExchanger _exchanger;
-    private readonly CallbackCommandHandler _sut;
-
-    public CallbackCommandHandlerTests()
+    public class CallbackCommandHandlerTests
     {
-        _exchanger = Substitute.For<IAuthCodeForTokenExchanger>();
-        _sut = new CallbackCommandHandler(_exchanger);
-    }
+        private readonly IAuthCodeForTokenExchanger _exchanger;
+        private readonly CallbackCommandHandler _sut;
 
-    [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenTokensAreNull()
-    {
-        var command = new LoginCallbackCommand("authcode", "redirect");
-
-        _exchanger.ExchangeCodeForTokensAsync("authcode", "redirect", default)
-            .Returns((TokenResponse?)null);
-
-        var result = await _sut.Handle(command, default);
-
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Code.Should().Be("Auth.TokenExchangeFailed");
-    }
-
-    [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenAccessTokenIsEmpty()
-    {
-        var command = new LoginCallbackCommand("authcode", "redirect");
-
-        var tokens = new TokenResponse
+        public CallbackCommandHandlerTests()
         {
-            AccessToken = "",
-            RefreshToken = "ref",
-            AccessExpiresIn = 3600
-        };
+            _exchanger = Substitute.For<IAuthCodeForTokenExchanger>();
+            _sut = new CallbackCommandHandler(_exchanger);
+        }
 
-        _exchanger.ExchangeCodeForTokensAsync("authcode", "redirect", default)
-            .Returns(tokens);
-
-        var result = await _sut.Handle(command, default);
-
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Code.Should().Be("Auth.TokenExchangeFailed");
-    }
-
-    [Fact]
-    public async Task Handle_ShouldReturnSuccess_WhenTokensAreValid()
-    {
-        var command = new LoginCallbackCommand("authcode", "redirect");
-
-        var tokens = new TokenResponse
+        [Fact]
+        public async Task Handle_ShouldReturnFailure_WhenExchangerReturnsFailure()
         {
-            AccessToken = "valid_token",
-            RefreshToken = "ref",
-            AccessExpiresIn = 3600
-        };
+            var command = new LoginCallbackCommand("authcode", "redirect");
 
-        _exchanger.ExchangeCodeForTokensAsync("authcode", "redirect", default)
-            .Returns(tokens);
+            var error = Error.Failure("Auth.TokenExchangeFailed", "Token exchange failed");
+            var failureResult = Result.Failure<TokenResponse>(error);
 
-        var result = await _sut.Handle(command, default);
+            _exchanger
+                .ExchangeCodeForTokensAsync("authcode", "redirect", Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(failureResult));
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().Be(tokens);
-    }
+            var result = await _sut.Handle(command, CancellationToken.None);
 
-    [Fact]
-    public async Task Handle_ShouldPassEmptyRedirectPath_WhenNullProvided()
-    {
-        var command = new LoginCallbackCommand("authcode", null);
+            result.IsSuccess.Should().BeFalse();
+            result.Error.Code.Should().Be("Auth.TokenExchangeFailed");
+        }
 
-        var tokens = new TokenResponse { AccessToken = "valid" };
+        [Fact]
+        public async Task Handle_ShouldReturnSuccess_WhenExchangerReturnsSuccess_EvenIfAccessTokenIsEmpty()
+        {
+            var command = new LoginCallbackCommand("authcode", "redirect");
 
-        _exchanger.ExchangeCodeForTokensAsync("authcode", "", default)
-            .Returns(tokens);
+            var tokens = new TokenResponse
+            {
+                AccessToken = string.Empty,
+                RefreshToken = "ref",
+                AccessExpiresIn = 3600
+            };
 
-        var result = await _sut.Handle(command, default);
+            _exchanger
+                .ExchangeCodeForTokensAsync("authcode", "redirect", Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(Result.Success(tokens)));
 
-        result.IsSuccess.Should().BeTrue();
-        await _exchanger.Received(1)
-            .ExchangeCodeForTokensAsync("authcode", "", default);
+            var result = await _sut.Handle(command, CancellationToken.None);
+
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Should().Be(tokens);
+        }
+
+        [Fact]
+        public async Task Handle_ShouldReturnSuccess_WhenTokensAreValid()
+        {
+            var command = new LoginCallbackCommand("authcode", "redirect");
+
+            var tokens = new TokenResponse
+            {
+                AccessToken = "valid_token",
+                RefreshToken = "ref",
+                AccessExpiresIn = 3600
+            };
+
+            _exchanger
+                .ExchangeCodeForTokensAsync("authcode", "redirect", Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(Result.Success(tokens)));
+
+            var result = await _sut.Handle(command, CancellationToken.None);
+
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Should().Be(tokens);
+        }
+
+        [Fact]
+        public async Task Handle_ShouldPassEmptyRedirectPath_WhenNullProvided()
+        {
+            var command = new LoginCallbackCommand("authcode", null);
+
+            var tokens = new TokenResponse { AccessToken = "valid" };
+
+            _exchanger
+                .ExchangeCodeForTokensAsync("authcode", "", Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(Result.Success(tokens)));
+
+            var result = await _sut.Handle(command, CancellationToken.None);
+
+            result.IsSuccess.Should().BeTrue();
+            await _exchanger.Received(1)
+                .ExchangeCodeForTokensAsync("authcode", "", Arg.Any<CancellationToken>());
+        }
     }
 }
