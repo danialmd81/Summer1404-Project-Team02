@@ -36,14 +36,13 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
         if (!valid)
             return Result.Failure(Error.Failure("Auth.InvalidCurrentPassword", "The current password is incorrect"));
 
-        try
+        var result = await _restPasswordService.ResetPasswordAsync(userId, dto.NewPassword ?? string.Empty, cancellationToken);
+
+        if (result.IsFailure)
         {
-            await _restPasswordService.ResetPasswordAsync(userId, dto.NewPassword ?? string.Empty, cancellationToken);
-            return Result.Success();
+            return Result.Failure(result.Error);
         }
-        catch (Exception ex)
-        {
-            return Result.Failure(Error.Problem("Auth.ResetFailed", $"Failed to reset password: {ex.Message}"));
-        }
+
+        return Result.Success();
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Net.Http.Json;
 using ETL.Application.Abstractions.Security;
+using ETL.Application.Common;
 using ETL.Application.Common.DTOs;
 using Microsoft.Extensions.Configuration;
 
@@ -13,10 +14,10 @@ public class AuthCodeForTokenExchanger : IAuthCodeForTokenExchanger
     public AuthCodeForTokenExchanger(IHttpClientFactory httpClientFactory, IConfiguration configuration)
     {
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));;
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration)); ;
     }
 
-    public async Task<TokenResponse?> ExchangeCodeForTokensAsync(string code, string redirectPath, CancellationToken ct = default)
+    public async Task<Result<TokenResponse>> ExchangeCodeForTokensAsync(string code, string redirectPath, CancellationToken ct = default)
     {
         var httpClient = _httpClientFactory.CreateClient();
         var tokenEndpoint = $"{_configuration["Authentication:Authority"]}/protocol/openid-connect/token";
@@ -38,7 +39,7 @@ public class AuthCodeForTokenExchanger : IAuthCodeForTokenExchanger
         if (!response.IsSuccessStatusCode)
         {
             var err = await response.Content.ReadAsStringAsync(ct);
-            throw new InvalidOperationException($"Token exchange failed: {err}");
+            return Result.Failure<TokenResponse>(Error.Failure("OAuth.LoginFailed", $"Token exchange failed: {err}"));
         }
 
         var tokenData = await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken: ct);
