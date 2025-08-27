@@ -39,7 +39,7 @@ public class AuthCodeForTokenExchanger : IAuthCodeForTokenExchanger
         if (!response.IsSuccessStatusCode)
         {
             var err = await response.Content.ReadAsStringAsync(ct);
-            return Result.Failure<TokenResponse>(Error.Failure("OAuth.LoginFailed", $"Token exchange failed: {err}"));
+            return Result.Failure<TokenResponse>(Error.Failure("Auth.TokenExchangeFailed", $"Token exchange failed: {err}"));
         }
 
         var tokenData = await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken: ct);

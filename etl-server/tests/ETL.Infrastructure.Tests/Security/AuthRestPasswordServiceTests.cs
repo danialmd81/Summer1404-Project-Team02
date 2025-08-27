@@ -7,122 +7,129 @@ using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using NSubstitute;
 
-namespace ETL.Infrastructure.Tests.Security;
-
-[Collection("HttpClient collection")]
-public class AuthRestPasswordServiceTests
+namespace ETL.Infrastructure.Tests.Security
 {
-    private readonly HttpClientTestFixture _fixture;
-    private readonly IConfiguration _configuration;
-    private readonly IAdminTokenService _adminTokenService;
-    private readonly AuthRestPasswordService _sut;
-
-    public AuthRestPasswordServiceTests(HttpClientTestFixture fixture)
+    [Collection("HttpClient collection")]
+    public class AuthRestPasswordServiceTests
     {
-        _fixture = fixture;
+        private readonly HttpClientTestFixture _fixture;
+        private readonly IConfiguration _configuration;
+        private readonly IAdminTokenService _adminTokenService;
+        private readonly AuthRestPasswordService _sut;
 
-        _configuration = Substitute.For<IConfiguration>();
-        _configuration["Authentication:KeycloakBaseUrl"].Returns("https://fake.keycloak");
-        _configuration["Authentication:Realm"].Returns("fake-realm");
+        public AuthRestPasswordServiceTests(HttpClientTestFixture fixture)
+        {
+            _fixture = fixture;
 
-        _adminTokenService = Substitute.For<IAdminTokenService>();
-        _adminTokenService.GetAdminAccessTokenAsync(Arg.Any<CancellationToken>())
-            .Returns("fake-admin-token");
+            _configuration = Substitute.For<IConfiguration>();
+            _configuration["Authentication:KeycloakBaseUrl"].Returns("https://fake.keycloak");
+            _configuration["Authentication:Realm"].Returns("fake-realm");
 
-        var httpFactory = Substitute.For<IHttpClientFactory>();
-        httpFactory.CreateClient().Returns(_fixture.Client);
+            _adminTokenService = Substitute.For<IAdminTokenService>();
+            _adminTokenService
+                .GetAdminAccessTokenAsync(Arg.Any<CancellationToken>())
+                .Returns("fake-admin-token");
 
-        _sut = new AuthRestPasswordService(httpFactory, _configuration, _adminTokenService);
-    }
+            var httpFactory = Substitute.For<IHttpClientFactory>();
+            httpFactory.CreateClient().Returns(_fixture.Client);
 
-    // Constructor guard clauses
-    [Fact]
-    public void Constructor_ShouldThrow_WhenHttpClientFactoryIsNull()
-    {
-        Action act = () => new AuthRestPasswordService(null!, _configuration, _adminTokenService);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("httpClientFactory");
-    }
+            _sut = new AuthRestPasswordService(httpFactory, _configuration, _adminTokenService);
+        }
 
-    [Fact]
-    public void Constructor_ShouldThrow_WhenConfigurationIsNull()
-    {
-        Action act = () => new AuthRestPasswordService(Substitute.For<IHttpClientFactory>(), null!, _adminTokenService);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("configuration");
-    }
+        [Fact]
+        public void Constructor_ShouldThrow_WhenHttpClientFactoryIsNull()
+        {
+            System.Action act = () => new AuthRestPasswordService(null!, _configuration, _adminTokenService);
+            act.Should().Throw<ArgumentNullException>().WithParameterName("httpClientFactory");
+        }
 
-    [Fact]
-    public void Constructor_ShouldThrow_WhenAdminTokenServiceIsNull()
-    {
-        Action act = () => new AuthRestPasswordService(Substitute.For<IHttpClientFactory>(), _configuration, null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("adminTokenService");
-    }
+        [Fact]
+        public void Constructor_ShouldThrow_WhenConfigurationIsNull()
+        {
+            System.Action act = () => new AuthRestPasswordService(Substitute.For<IHttpClientFactory>(), null!, _adminTokenService);
+            act.Should().Throw<ArgumentNullException>().WithParameterName("configuration");
+        }
 
-    [Fact]
-    public async Task ResetPasswordAsync_ShouldThrow_WhenAdminTokenIsEmpty()
-    {
-        // Arrange
-        _adminTokenService.GetAdminAccessTokenAsync(Arg.Any<CancellationToken>())
-            .Returns("");
+        [Fact]
+        public void Constructor_ShouldThrow_WhenAdminTokenServiceIsNull()
+        {
+            System.Action act = () => new AuthRestPasswordService(Substitute.For<IHttpClientFactory>(), _configuration, null!);
+            act.Should().Throw<ArgumentNullException>().WithParameterName("adminTokenService");
+        }
 
-        // Act
-        var act = async () => await _sut.ResetPasswordAsync("user123", "newPassword");
+        [Fact]
+        public async Task ResetPasswordAsync_ShouldThrow_WhenAdminTokenIsEmpty()
+        {
+            // Arrange
+            _adminTokenService
+                .GetAdminAccessTokenAsync(Arg.Any<CancellationToken>())
+                .Returns(string.Empty);
 
-        // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*Could not obtain admin credentials*");
-    }
+            // Act
+            var act = async () => await _sut.ResetPasswordAsync("user123", "newPassword", CancellationToken.None);
 
-    [Fact]
-    public async Task ResetPasswordAsync_ShouldSucceed_WhenResponseIsSuccessful()
-    {
-        // Arrange
-        _fixture.Handler.SetupResponse(HttpStatusCode.NoContent, "");
+            // Assert
+            await act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("*Could not obtain admin credentials*");
+        }
 
-        // Act
-        var act = async () => await _sut.ResetPasswordAsync("user123", "newPassword");
+        [Fact]
+        public async Task ResetPasswordAsync_ShouldReturnSuccessResult_WhenResponseIsSuccessful()
+        {
+            // Arrange
+            _fixture.Handler.SetupResponse(HttpStatusCode.NoContent, "");
 
-        // Assert
-        await act.Should().NotThrowAsync();
-        _fixture.Handler.LastRequest!.Method.Should().Be(HttpMethod.Put);
-        _fixture.Handler.LastRequest!.RequestUri!.ToString()
-            .Should().Contain("/users/user123/reset-password");
-        _fixture.Handler.LastRequest!.Headers.Authorization!.Scheme.Should().Be("Bearer");
-        _fixture.Handler.LastRequest!.Headers.Authorization!.Parameter.Should().Be("fake-admin-token");
-    }
+            // Act
+            var result = await _sut.ResetPasswordAsync("user123", "newPassword", CancellationToken.None);
 
-    [Fact]
-    public async Task ResetPasswordAsync_ShouldThrow_WhenResponseFails()
-    {
-        // Arrange
-        _fixture.Handler.SetupResponse(HttpStatusCode.BadRequest, "reset error");
+            // Assert
+            result.IsSuccess.Should().BeTrue();
 
-        // Act
-        var act = async () => await _sut.ResetPasswordAsync("user123", "newPassword");
+            _fixture.Handler.LastRequest!.Method.Should().Be(HttpMethod.Put);
+            _fixture.Handler.LastRequest!.RequestUri!.ToString()
+                .Should().Contain("/users/user123/reset-password");
+            _fixture.Handler.LastRequest!.Headers.Authorization!.Scheme.Should().Be("Bearer");
+            _fixture.Handler.LastRequest!.Headers.Authorization!.Parameter.Should().Be("fake-admin-token");
+        }
 
-        // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*reset error*");
-    }
+        [Fact]
+        public async Task ResetPasswordAsync_ShouldReturnFailureResult_WhenResponseFails()
+        {
+            // Arrange
+            _fixture.Handler.SetupResponse(HttpStatusCode.BadRequest, "reset error");
 
-    [Fact]
-    public async Task ResetPasswordAsync_ShouldSendCorrectPayload()
-    {
-        // Arrange
-        _fixture.Handler.SetupResponse(HttpStatusCode.NoContent, "");
+            // Act
+            var result = await _sut.ResetPasswordAsync("user123", "newPassword", CancellationToken.None);
 
-        var userId = "user123";
-        var newPassword = "myNewSecret123";
+            // Assert
+            result.IsFailure.Should().BeTrue();
+            result.Error.Code.Should().Be("OAuth.ResetPasswordFailed");
+            result.Error.Description.Should().Contain("reset error");
+        }
 
-        // Act
-        await _sut.ResetPasswordAsync(userId, newPassword);
+        [Fact]
+        public async Task ResetPasswordAsync_ShouldSendCorrectPayload()
+        {
+            // Arrange
+            _fixture.Handler.SetupResponse(HttpStatusCode.NoContent, "");
 
-        // Assert
-        var body = await _fixture.Handler.LastRequest!.Content!.ReadAsStringAsync();
-        using var doc = JsonDocument.Parse(body);
-        var root = doc.RootElement;
+            var userId = "user123";
+            var newPassword = "myNewSecret123";
 
-        root.GetProperty("type").GetString().Should().Be("password");
-        root.GetProperty("temporary").GetBoolean().Should().BeFalse();
-        root.GetProperty("value").GetString().Should().Be(newPassword);
+            // Act
+            var result = await _sut.ResetPasswordAsync(userId, newPassword, CancellationToken.None);
+
+            // Assert result success
+            result.IsSuccess.Should().BeTrue();
+
+            // Assert payload
+            var body = await _fixture.Handler.LastRequest!.Content!.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(body);
+            var root = doc.RootElement;
+
+            root.GetProperty("type").GetString().Should().Be("password");
+            root.GetProperty("temporary").GetBoolean().Should().BeFalse();
+            root.GetProperty("value").GetString().Should().Be(newPassword);
+        }
     }
 }
