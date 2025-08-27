@@ -1,11 +1,17 @@
-﻿using ETL.Application.Abstractions.Security;
+﻿using System.Data;
+using ETL.Application.Abstractions.Data;
+using ETL.Application.Abstractions.Repositories;
+using ETL.Application.Abstractions.Security;
 using ETL.Application.Abstractions.UserServices;
+using ETL.Infrastructure.Data;
 using ETL.Infrastructure.OAuth;
 using ETL.Infrastructure.OAuth.Abstractions;
+using ETL.Infrastructure.Repository;
 using ETL.Infrastructure.Security;
 using ETL.Infrastructure.UserServices;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 
 namespace ETL.Infrastructure;
 
@@ -48,7 +54,13 @@ public static class DependencyInjection
         services.AddScoped<IAuthCredentialValidator, AuthCredentialValidator>();
         services.AddScoped<IAuthRestPasswordService, AuthRestPasswordService>();
         services.AddScoped<IAuthLogoutService, AuthLogoutService>();
-
+        services.AddScoped<IDbConnection>(sp =>
+        {
+            return new NpgsqlConnection(config.GetConnectionString("DefaultConnection"));
+        });
+        services.AddScoped<IDynamicTableRepository, DynamicTableRepository>();
+        services.AddScoped<IDataSetRepository, DataSetRepository>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;
     }

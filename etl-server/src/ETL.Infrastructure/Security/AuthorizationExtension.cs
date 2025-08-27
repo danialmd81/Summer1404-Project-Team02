@@ -27,6 +27,9 @@ public static class AuthorizationExtension
 
             options.AddPolicy(Policy.CanReadRoles, policy =>
                 policy.RequireRole(Role.SystemAdmin));
+            
+            options.AddPolicy(Policy.CanUploadFile, policy =>
+                policy.RequireRole(Role.SystemAdmin, Role.DataAdmin));
         });
 
         return services;
