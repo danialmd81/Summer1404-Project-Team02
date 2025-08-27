@@ -105,6 +105,15 @@ public class DynamicTableRepository : IDynamicTableRepository
     }
 
 
+    public async Task DeleteColumnAsync(string tableName, string columnName, CancellationToken cancellationToken = default)
+    {
+        var sanitizedTable = SanitizeIdentifier(tableName);
+        var sanitizedCol = SanitizeIdentifier(columnName);
+
+        var sql = $"ALTER TABLE {sanitizedTable} DROP COLUMN {sanitizedCol};";
+        await _dbConnection.ExecuteAsync(sql, _transaction);
+    }
+
     public async Task RenameColumnAsync(string tableName, string oldColumnName, string newColumnName, CancellationToken cancellationToken = default)
     {
         var sanitizedTable = SanitizeIdentifier(tableName);

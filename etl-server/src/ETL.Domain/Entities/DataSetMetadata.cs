@@ -26,7 +26,7 @@ public class DataSetMetadata
         UploadedAt = uploadedAt;
     }
 
-    public void SetUserFriendlyName(string newName)
+    public void Rename(string newName)
     {
         TableName = newName;
     }
