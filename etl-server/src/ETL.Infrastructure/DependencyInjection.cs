@@ -12,6 +12,7 @@ using ETL.Infrastructure.UserServices;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
+using SqlKata.Compilers;
 
 namespace ETL.Infrastructure;
 
@@ -62,6 +63,8 @@ public static class DependencyInjection
         services.AddScoped<IDynamicTableRepository, DynamicTableRepository>();
         services.AddScoped<IDataSetRepository, DataSetRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddSingleton<Compiler, PostgresCompiler>();
+
 
         return services;
     }

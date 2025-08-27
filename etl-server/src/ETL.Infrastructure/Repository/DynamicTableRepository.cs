@@ -87,6 +87,23 @@ public class DynamicTableRepository : IDynamicTableRepository
             }
         }
     }
+    public async Task RenameTableAsync(string oldTableName, string newTableName, CancellationToken cancellationToken = default)
+    {
+        var sanitizedOld = SanitizeIdentifier(oldTableName);
+        var sanitizedNew = SanitizeIdentifier(newTableName);
+
+        var sql = $"ALTER TABLE {sanitizedOld} RENAME TO {sanitizedNew};";
+        await _dbConnection.ExecuteAsync(sql, _transaction);
+    }
+
+    public async Task DeleteTableAsync(string tableName, CancellationToken cancellationToken = default)
+    {
+        var sanitized = SanitizeIdentifier(tableName);
+
+        var sql = $"DROP TABLE IF EXISTS {sanitized};";
+        await _dbConnection.ExecuteAsync(sql, _transaction);
+    }
+
 
     public async Task RenameColumnAsync(string tableName, string oldColumnName, string newColumnName, CancellationToken cancellationToken = default)
     {
