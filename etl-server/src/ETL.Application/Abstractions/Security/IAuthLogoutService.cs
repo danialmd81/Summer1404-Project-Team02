@@ -1,5 +1,7 @@
-﻿namespace ETL.Application.Abstractions.Security;
+﻿using ETL.Application.Common;
+
+namespace ETL.Application.Abstractions.Security;
 public interface IAuthLogoutService
 {
-    Task LogoutAsync(string accessToken, string refreshToken, CancellationToken ct = default);
+    Task<Result> LogoutAsync(string accessToken, string refreshToken, CancellationToken ct = default);
 }

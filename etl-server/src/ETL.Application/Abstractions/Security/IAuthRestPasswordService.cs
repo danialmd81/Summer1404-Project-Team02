@@ -1,6 +1,8 @@
-﻿namespace ETL.Application.Abstractions.Security;
+﻿using ETL.Application.Common;
+
+namespace ETL.Application.Abstractions.Security;
 
 public interface IAuthRestPasswordService
 {
-    Task ResetPasswordAsync(string userId, string newPassword, CancellationToken ct = default);
+    Task<Result> ResetPasswordAsync(string userId, string newPassword, CancellationToken ct = default);
 }

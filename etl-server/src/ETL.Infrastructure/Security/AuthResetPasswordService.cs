@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json;
 using ETL.Application.Abstractions.Security;
+using ETL.Application.Common;
 using Microsoft.Extensions.Configuration;
 
 namespace ETL.Infrastructure.Security;
@@ -15,10 +16,10 @@ public class AuthRestPasswordService : IAuthRestPasswordService
     {
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-        _adminTokenService = adminTokenService ?? throw new ArgumentNullException(nameof(adminTokenService));;
+        _adminTokenService = adminTokenService ?? throw new ArgumentNullException(nameof(adminTokenService)); ;
     }
 
-    public async Task ResetPasswordAsync(string userId, string newPassword, CancellationToken ct = default)
+    public async Task<Result> ResetPasswordAsync(string userId, string newPassword, CancellationToken ct = default)
     {
         var adminAccessToken = await _adminTokenService.GetAdminAccessTokenAsync(ct);
         if (string.IsNullOrEmpty(adminAccessToken))
@@ -41,7 +42,9 @@ public class AuthRestPasswordService : IAuthRestPasswordService
         if (!response.IsSuccessStatusCode)
         {
             var err = await response.Content.ReadAsStringAsync(ct);
-            throw new InvalidOperationException($"Failed to update password in OAuth. {err}");
+            return Result.Failure(Error.Failure("OAuth.ResetPasswordFailed", $"Reset password failed: {err}"));
         }
+
+        return Result.Success();
     }
 }

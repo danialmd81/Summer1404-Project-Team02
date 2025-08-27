@@ -1,5 +1,4 @@
 using ETL.API.Infrastructure;
-using ETL.API.Middlewares;
 using ETL.Application;
 using ETL.Infrastructure;
 
@@ -42,7 +41,6 @@ app.UseHttpsRedirection();
 
 app.UseCors("Angular");
 
-app.UseTokenRefresh();
 app.UseAuthentication();
 app.UseAuthorization();
 

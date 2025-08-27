@@ -2,6 +2,7 @@
 using ETL.Application.Auth.DTOs;
 using ETL.Application.Auth.LoginCallback;
 using ETL.Application.Auth.Logout;
+using ETL.Application.Auth.Refresh;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -68,6 +69,53 @@ public class AuthController : ControllerBase
         Response.Cookies.Append("refresh_token", tokens.RefreshToken ?? string.Empty, refreshCookieOptions);
 
         return Ok(new { message = "Authentication successful" });
+    }
+
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh(CancellationToken ct)
+    {
+        var refreshToken = Request.Cookies["refresh_token"];
+
+        if (string.IsNullOrWhiteSpace(refreshToken))
+        {
+            Response.Cookies.Delete("access_token");
+            Response.Cookies.Delete("refresh_token");
+            return Unauthorized(new { message = "No refresh token present." });
+        }
+
+        var result = await _mediator.Send(new RefreshTokenCommand(refreshToken), ct);
+
+        if (result.IsFailure)
+        {
+            Response.Cookies.Delete("access_token");
+            Response.Cookies.Delete("refresh_token");
+
+            return Unauthorized(new { error = result.Error.Code, message = result.Error.Description });
+        }
+
+        var tokens = result.Value!;
+
+        var accessCookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Expires = DateTime.UtcNow.AddSeconds(tokens.AccessExpiresIn)
+        };
+
+        var refreshCookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Expires = DateTime.UtcNow.AddSeconds(tokens.RefreshExpiresIn),
+        };
+
+        Response.Cookies.Append("access_token", tokens.AccessToken!, accessCookieOptions);
+        Response.Cookies.Append("refresh_token", tokens.RefreshToken!, refreshCookieOptions);
+
+
+        return Ok(new { message = "Token refreshed." });
     }
 
     [Authorize]
