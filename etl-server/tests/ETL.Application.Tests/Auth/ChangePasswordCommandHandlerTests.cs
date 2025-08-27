@@ -2,141 +2,152 @@ using System.Security.Claims;
 using ETL.Application.Abstractions.Security;
 using ETL.Application.Auth.ChangePassword;
 using ETL.Application.Auth.DTOs;
+using ETL.Application.Common;
 using FluentAssertions;
 using NSubstitute;
-using NSubstitute.ExceptionExtensions;
 
-namespace ETL.Application.Tests.Auth;
-
-public class ChangePasswordCommandHandlerTests
+namespace ETL.Application.Tests.Auth
 {
-    private readonly IAuthCredentialValidator _credentialValidator;
-    private readonly IAuthRestPasswordService _resetPasswordService;
-    private readonly ChangePasswordCommandHandler _sut;
-
-    public ChangePasswordCommandHandlerTests()
+    public class ChangePasswordCommandHandlerTests
     {
-        _credentialValidator = Substitute.For<IAuthCredentialValidator>();
-        _resetPasswordService = Substitute.For<IAuthRestPasswordService>();
-        _sut = new ChangePasswordCommandHandler(_credentialValidator, _resetPasswordService);
-    }
+        private readonly IAuthCredentialValidator _credentialValidator;
+        private readonly IAuthRestPasswordService _resetPasswordService;
+        private readonly ChangePasswordCommandHandler _sut;
 
-    private static ClaimsPrincipal CreateUser(string userId = "123", string username = "testuser")
-    {
-        var claims = new[]
+        public ChangePasswordCommandHandlerTests()
         {
-            new Claim(ClaimTypes.NameIdentifier, userId),
-            new Claim("preferred_username", username)
-        };
-        return new ClaimsPrincipal(new ClaimsIdentity(claims));
-    }
+            _credentialValidator = Substitute.For<IAuthCredentialValidator>();
+            _resetPasswordService = Substitute.For<IAuthRestPasswordService>();
+            _sut = new ChangePasswordCommandHandler(_credentialValidator, _resetPasswordService);
+        }
 
-    [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenRequestIsNull()
-    {
-        var command = new ChangePasswordCommand(null!, CreateUser());
-
-        var result = await _sut.Handle(command, default);
-
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Code.Should().Be("Auth.InvalidRequest");
-    }
-
-    [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenPasswordsDoNotMatch()
-    {
-        var dto = new ChangePasswordDto
+        private static ClaimsPrincipal CreateUser(string userId = "123", string username = "testuser")
         {
-            CurrentPassword = "old",
-            NewPassword = "new",
-            ConfirmPassword = "different"
-        };
-        var command = new ChangePasswordCommand(dto, CreateUser());
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, userId),
+                new Claim("preferred_username", username)
+            };
+            return new ClaimsPrincipal(new ClaimsIdentity(claims));
+        }
 
-        var result = await _sut.Handle(command, default);
-
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Code.Should().Be("Auth.PasswordMismatch");
-    }
-
-    [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenUserClaimsMissing()
-    {
-        var dto = new ChangePasswordDto
+        [Fact]
+        public async Task Handle_ShouldReturnFailure_WhenRequestIsNull()
         {
-            CurrentPassword = "old",
-            NewPassword = "new",
-            ConfirmPassword = "new"
-        };
-        var command = new ChangePasswordCommand(dto, new ClaimsPrincipal());
+            var command = new ChangePasswordCommand(null!, CreateUser());
 
-        var result = await _sut.Handle(command, default);
+            var result = await _sut.Handle(command, CancellationToken.None);
 
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Code.Should().Be("Auth.UserNotFound");
-    }
+            result.IsSuccess.Should().BeFalse();
+            result.Error.Code.Should().Be("Auth.InvalidRequest");
+        }
 
-    [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenCurrentPasswordInvalid()
-    {
-        var dto = new ChangePasswordDto
+        [Fact]
+        public async Task Handle_ShouldReturnFailure_WhenPasswordsDoNotMatch()
         {
-            CurrentPassword = "wrong",
-            NewPassword = "new",
-            ConfirmPassword = "new"
-        };
-        var command = new ChangePasswordCommand(dto, CreateUser());
+            var dto = new ChangePasswordDto
+            {
+                CurrentPassword = "old",
+                NewPassword = "new",
+                ConfirmPassword = "different"
+            };
+            var command = new ChangePasswordCommand(dto, CreateUser());
 
-        _credentialValidator.ValidateCredentialsAsync("testuser", "wrong", default)
-            .Returns(false);
+            var result = await _sut.Handle(command, CancellationToken.None);
 
-        var result = await _sut.Handle(command, default);
+            result.IsSuccess.Should().BeFalse();
+            result.Error.Code.Should().Be("Auth.PasswordMismatch");
+        }
 
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Code.Should().Be("Auth.InvalidCurrentPassword");
-    }
-
-    [Fact]
-    public async Task Handle_ShouldReturnSuccess_WhenPasswordResetSucceeds()
-    {
-        var dto = new ChangePasswordDto
+        [Fact]
+        public async Task Handle_ShouldReturnFailure_WhenUserClaimsMissing()
         {
-            CurrentPassword = "old",
-            NewPassword = "new",
-            ConfirmPassword = "new"
-        };
-        var command = new ChangePasswordCommand(dto, CreateUser());
+            var dto = new ChangePasswordDto
+            {
+                CurrentPassword = "old",
+                NewPassword = "new",
+                ConfirmPassword = "new"
+            };
+            var command = new ChangePasswordCommand(dto, new ClaimsPrincipal());
 
-        _credentialValidator.ValidateCredentialsAsync("testuser", "old", default)
-            .Returns(true);
+            var result = await _sut.Handle(command, CancellationToken.None);
 
-        var result = await _sut.Handle(command, default);
+            result.IsSuccess.Should().BeFalse();
+            result.Error.Code.Should().Be("Auth.UserNotFound");
+        }
 
-        result.IsSuccess.Should().BeTrue();
-        await _resetPasswordService.Received(1).ResetPasswordAsync("123", "new", default);
-    }
-
-    [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenResetPasswordThrows()
-    {
-        var dto = new ChangePasswordDto
+        [Fact]
+        public async Task Handle_ShouldReturnFailure_WhenCurrentPasswordInvalid()
         {
-            CurrentPassword = "old",
-            NewPassword = "new",
-            ConfirmPassword = "new"
-        };
-        var command = new ChangePasswordCommand(dto, CreateUser());
+            var dto = new ChangePasswordDto
+            {
+                CurrentPassword = "wrong",
+                NewPassword = "new",
+                ConfirmPassword = "new"
+            };
+            var command = new ChangePasswordCommand(dto, CreateUser());
 
-        _credentialValidator.ValidateCredentialsAsync("testuser", "old", default)
-            .Returns(true);
+            _credentialValidator
+                .ValidateCredentialsAsync("testuser", "wrong", Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(false));
 
-        _resetPasswordService.ResetPasswordAsync("123", "new", default)
-            .Throws(new Exception("DB is down"));
+            var result = await _sut.Handle(command, CancellationToken.None);
 
-        var result = await _sut.Handle(command, default);
+            result.IsSuccess.Should().BeFalse();
+            result.Error.Code.Should().Be("Auth.InvalidCurrentPassword");
+        }
 
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Code.Should().Be("Auth.ResetFailed");
-        result.Error.Description.Should().Contain("DB is down");
+        [Fact]
+        public async Task Handle_ShouldReturnSuccess_WhenPasswordResetSucceeds()
+        {
+            var dto = new ChangePasswordDto
+            {
+                CurrentPassword = "old",
+                NewPassword = "new",
+                ConfirmPassword = "new"
+            };
+            var command = new ChangePasswordCommand(dto, CreateUser());
+
+            _credentialValidator
+                .ValidateCredentialsAsync("testuser", "old", Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(true));
+
+            _resetPasswordService
+                .ResetPasswordAsync("123", "new", Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(Result.Success()));
+
+            var result = await _sut.Handle(command, CancellationToken.None);
+
+            result.IsSuccess.Should().BeTrue();
+            await _resetPasswordService.Received(1)
+                .ResetPasswordAsync("123", "new", Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task Handle_ShouldReturnFailure_WhenResetPasswordReturnsFailure()
+        {
+            var dto = new ChangePasswordDto
+            {
+                CurrentPassword = "old",
+                NewPassword = "new",
+                ConfirmPassword = "new"
+            };
+            var command = new ChangePasswordCommand(dto, CreateUser());
+
+            _credentialValidator
+                .ValidateCredentialsAsync("testuser", "old", Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(true));
+
+            var error = Error.Failure("Auth.ResetFailed", "DB is down");
+            _resetPasswordService
+                .ResetPasswordAsync("123", "new", Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(Result.Failure(error)));
+
+            var result = await _sut.Handle(command, CancellationToken.None);
+
+            result.IsSuccess.Should().BeFalse();
+            result.Error.Code.Should().Be("Auth.ResetFailed");
+            result.Error.Description.Should().Contain("DB is down");
+        }
     }
 }

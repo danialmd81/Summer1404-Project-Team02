@@ -14,7 +14,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ETL.API.Controllers;
 
 [ApiController]
-[Route("api/user")]
+[Route("api/users")]
 public class UserController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -25,7 +25,7 @@ public class UserController : ControllerBase
     }
 
     [Authorize]
-    [HttpGet("profile")]
+    [HttpGet("me")]
     public async Task<IActionResult> GetUserProfile(CancellationToken ct)
     {
         var dto = await _mediator.Send(new GetUserProfileQuery(User), ct);
@@ -41,7 +41,7 @@ public class UserController : ControllerBase
     }
 
     [Authorize(Policy = Policy.CanReadAllUsers)]
-    [HttpGet("all")]
+    [HttpGet()]
     public async Task<IActionResult> GetAllUsers([FromQuery] int? first, [FromQuery] int? max, CancellationToken ct)
     {
         var result = await _mediator.Send(new GetAllUsersQuery(first, max), ct);
@@ -49,7 +49,7 @@ public class UserController : ControllerBase
     }
 
     [Authorize(Policy = Policy.CanCreateUser)]
-    [HttpPost("create")]
+    [HttpPost()]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserCommand request, CancellationToken ct)
     {
         var result = await _mediator.Send(request, ct);
@@ -64,7 +64,7 @@ public class UserController : ControllerBase
     }
 
     [Authorize(Policy = Policy.CanChangeUserRole)]
-    [HttpPatch("/change-role")]
+    [HttpPatch("change-role")]
     public async Task<IActionResult> ChangeUserRole([FromBody] ChangeUserRoleCommand request, CancellationToken ct)
     {
         var result = await _mediator.Send(request, ct);
@@ -76,7 +76,7 @@ public class UserController : ControllerBase
     }
 
     [Authorize]
-    [HttpPut("edit/{id}")]
+    [HttpPut()]
     public async Task<IActionResult> EditUser([FromBody] EditUserCommand request, CancellationToken ct)
     {
         var result = await _mediator.Send(request, ct);
