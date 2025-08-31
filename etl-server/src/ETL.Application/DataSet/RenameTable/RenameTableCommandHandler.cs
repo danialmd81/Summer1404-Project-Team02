@@ -1,9 +1,10 @@
 ﻿using ETL.Application.Abstractions.Data;
+using ETL.Application.Common;
 using MediatR;
 
 namespace ETL.Application.DataSet.RenameTable;
 
-public class RenameTableCommandHandler : IRequestHandler<RenameTableCommand, Unit>
+public class RenameTableCommandHandler : IRequestHandler<RenameTableCommand, Result>
 {
     private readonly IUnitOfWork _uow;
 
@@ -12,30 +13,28 @@ public class RenameTableCommandHandler : IRequestHandler<RenameTableCommand, Uni
         _uow = uow;
     }
 
-    public async Task<Unit> Handle(RenameTableCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(RenameTableCommand request, CancellationToken cancellationToken)
     {
         _uow.Begin();
 
         try
         {
-            // Rename physical table
             await _uow.DynamicTables.RenameTableAsync(request.OldTableName, request.NewTableName, cancellationToken);
 
-            // Update metadata record too
             var dataSet = await _uow.DataSets.GetByTableNameAsync(request.OldTableName, cancellationToken);
             if (dataSet == null)
-                throw new InvalidOperationException($"Dataset '{request.OldTableName}' not found in metadata.");
+                return Result.Failure(Error.NotFound("TableRename.Failed", $"Dataset '{request.OldTableName}' not found!"));
 
-            dataSet.Rename(request.NewTableName); // assume your entity has Rename method or set TableName
+            dataSet.Rename(request.NewTableName);
             await _uow.DataSets.UpdateAsync(dataSet, cancellationToken);
 
             _uow.Commit();
-            return Unit.Value;
+            return Result.Success();
         }
-        catch
+        catch (Exception e)
         {
             _uow.Rollback();
-            throw;
+            return Result.Failure(Error.Problem("TableRename.Failed", e.Message));
         }
     }
 }

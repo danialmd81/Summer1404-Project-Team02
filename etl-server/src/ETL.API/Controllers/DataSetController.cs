@@ -51,17 +51,22 @@ public class DataSetsController : ControllerBase
         return Ok(result.Value);
     }
 
-    [HttpPut("rename")]
-    [Authorize(Policy = Policy.CanUploadFile)]
+    [HttpPut("rename-table")]
+    [Authorize(Policy = Policy.CanRenameDataSet)]
     public async Task<IActionResult> RenameTable([FromBody] RenameTableCommand request, CancellationToken cancellationToken)
     {
-        await _mediator.Send(request, cancellationToken);
+        var result = await _mediator.Send(request, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            this.ToActionResult(result.Error);
+        }
 
         return Ok("Table has been renamed.");
     }
 
 
-    [HttpDelete("{tableName}")]
+    [HttpDelete()]
     [Authorize(Policy = Policy.CanUploadFile)]
     public async Task<IActionResult> DeleteTable(DeleteTableCommand request, CancellationToken cancellationToken)
     {
