@@ -16,7 +16,7 @@ public class StagingTableRepository : IStagingTableRepository
 
     public StagingTableRepository(IDbConnection dbConnection)
     {
-        _dbConnection = dbConnection;
+        _dbConnection = dbConnection ?? throw new ArgumentNullException(nameof(dbConnection));
     }
 
     public void SetTransaction(IDbTransaction? transaction)

@@ -15,8 +15,8 @@ public class DataSetRepository : IDataSetRepository
 
     public DataSetRepository(IDbConnection db, Compiler compiler)
     {
-        _db = db;
-        _compiler = compiler;
+        _db = db ?? throw new ArgumentNullException(nameof(db));
+        _compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
     }
 
     public void SetTransaction(IDbTransaction? transaction)

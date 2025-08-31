@@ -14,9 +14,9 @@ public class UnitOfWork : IUnitOfWork
 
     public UnitOfWork(IDbConnection connection, IDataSetRepository dataSets, IStagingTableRepository dynamicTables)
     {
-        _connection = connection;
-        DataSets = dataSets;
-        DynamicTables = dynamicTables;
+        _connection = connection ?? throw new ArgumentNullException(nameof(connection));
+        DataSets = dataSets ?? throw new ArgumentNullException(nameof(dataSets));
+        DynamicTables = dynamicTables ?? throw new ArgumentNullException(nameof(dynamicTables));
     }
 
     public void Begin()
