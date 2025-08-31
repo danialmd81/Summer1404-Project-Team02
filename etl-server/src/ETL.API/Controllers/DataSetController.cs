@@ -36,9 +36,7 @@ public class DataSetsController : ControllerBase
         var result = await _mediator.Send(cmd, cancellationToken);
 
         if (result.IsFailure)
-        {
             this.ToActionResult(result.Error);
-        }
 
         return Ok(new { message = "File has been stored in database." });
     }
@@ -52,24 +50,27 @@ public class DataSetsController : ControllerBase
     }
 
     [HttpPut("rename-table")]
-    [Authorize(Policy = Policy.CanRenameDataSet)]
+    [Authorize(Policy = Policy.CanRenameTable)]
     public async Task<IActionResult> RenameTable([FromBody] RenameTableCommand request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(request, cancellationToken);
 
         if (result.IsFailure)
-        {
             this.ToActionResult(result.Error);
-        }
 
         return Ok("Table has been renamed.");
     }
 
-    [HttpPut("{tableName}/columns/rename")]
-    [Authorize(Policy = Policy.CanUploadFile)]
+    [HttpPut("rename-column")]
+    [Authorize(Policy = Policy.CanRenameColumn)]
     public async Task<IActionResult> RenameColumn(RenameColumnCommand request, CancellationToken cancellationToken)
     {
-        await _mediator.Send(request, cancellationToken);
+        var result = await _mediator.Send(request, cancellationToken);
+
+        if (result.IsFailure)
+            this.ToActionResult(result.Error);
+
+
         return Ok("Column has been renamed.");
     }
 

@@ -10,5 +10,8 @@ public static class Policy
     public const string CanReadRoles = "CanReadRoles";
     public const string CanUploadFile = "CanUploadFile";
     public const string CanReadAllDataSets = "CanReadAllDataSets";
-    public const string CanRenameDataSet = "CanRenameDataSet";
+    public const string CanRenameTable = "CanRenameTable";
+    public const string CanRenameColumn = "CanRenameColumn";
+    public const string CanDeleteTable = "CanDeleteTable";
+    public const string CanDeleteColumn = "CanDeleteColumn";
 }

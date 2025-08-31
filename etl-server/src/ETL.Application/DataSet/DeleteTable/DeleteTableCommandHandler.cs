@@ -19,7 +19,7 @@ public class DeleteTableCommandHandler : IRequestHandler<DeleteTableCommand, Uni
         try
         {
             // Drop physical table
-            await _uow.DynamicTables.DeleteTableAsync(request.TableName, cancellationToken);
+            await _uow.StagingTables.DeleteTableAsync(request.TableName, cancellationToken);
 
             // Remove metadata record
             var dataSet = await _uow.DataSets.GetByTableNameAsync(request.TableName, cancellationToken);

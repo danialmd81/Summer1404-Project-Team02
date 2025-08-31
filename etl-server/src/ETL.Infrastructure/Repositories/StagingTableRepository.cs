@@ -85,6 +85,16 @@ public class StagingTableRepository : IStagingTableRepository
         await _dbConnection.ExecuteAsync(sql, _transaction);
     }
 
+    public async Task RenameColumnAsync(string tableName, string oldColumnName, string newColumnName, CancellationToken cancellationToken = default)
+    {
+        var sanitizedTable = SanitizeIdentifier(tableName);
+        var sanitizedOldCol = SanitizeIdentifier(oldColumnName);
+        var sanitizedNewCol = SanitizeIdentifier(newColumnName);
+
+        var sql = $"ALTER TABLE {sanitizedTable} RENAME COLUMN {sanitizedOldCol} TO {sanitizedNewCol};";
+        await _dbConnection.ExecuteAsync(sql, _transaction);
+    }
+
     public async Task DeleteTableAsync(string tableName, CancellationToken cancellationToken = default)
     {
         var sanitized = SanitizeIdentifier(tableName);
@@ -100,16 +110,6 @@ public class StagingTableRepository : IStagingTableRepository
         var sanitizedCol = SanitizeIdentifier(columnName);
 
         var sql = $"ALTER TABLE {sanitizedTable} DROP COLUMN {sanitizedCol};";
-        await _dbConnection.ExecuteAsync(sql, _transaction);
-    }
-
-    public async Task RenameColumnAsync(string tableName, string oldColumnName, string newColumnName, CancellationToken cancellationToken = default)
-    {
-        var sanitizedTable = SanitizeIdentifier(tableName);
-        var sanitizedOldCol = SanitizeIdentifier(oldColumnName);
-        var sanitizedNewCol = SanitizeIdentifier(newColumnName);
-
-        var sql = $"ALTER TABLE {sanitizedTable} RENAME COLUMN {sanitizedOldCol} TO {sanitizedNewCol};";
         await _dbConnection.ExecuteAsync(sql, _transaction);
     }
 

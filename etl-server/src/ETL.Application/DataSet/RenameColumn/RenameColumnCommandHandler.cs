@@ -1,9 +1,10 @@
 ﻿using ETL.Application.Abstractions.Data;
+using ETL.Application.Common;
 using MediatR;
 
 namespace ETL.Application.DataSet.RenameColumn;
 
-public class RenameColumnCommandHandler : IRequestHandler<RenameColumnCommand, Unit>
+public class RenameColumnCommandHandler : IRequestHandler<RenameColumnCommand, Result>
 {
     private readonly IUnitOfWork _uow;
 
@@ -12,19 +13,19 @@ public class RenameColumnCommandHandler : IRequestHandler<RenameColumnCommand, U
         _uow = uow ?? throw new ArgumentNullException(nameof(uow));
     }
 
-    public async Task<Unit> Handle(RenameColumnCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(RenameColumnCommand request, CancellationToken cancellationToken)
     {
         _uow.Begin();
         try
         {
-            await _uow.DynamicTables.RenameColumnAsync(request.TableName, request.OldColumnName, request.NewColumnName, cancellationToken);
+            await _uow.StagingTables.RenameColumnAsync(request.TableName, request.OldColumnName, request.NewColumnName, cancellationToken);
             _uow.Commit();
-            return Unit.Value;
+            return Result.Success();
         }
-        catch
+        catch (Exception ex)
         {
             _uow.Rollback();
-            throw;
+            return Result.Failure(Error.Problem("ColumnRename.Failed", ex.Message));
         }
     }
 }

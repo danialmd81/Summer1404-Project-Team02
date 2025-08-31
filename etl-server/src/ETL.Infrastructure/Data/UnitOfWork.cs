@@ -10,13 +10,13 @@ public class UnitOfWork : IUnitOfWork
     private IDbTransaction? _transaction;
 
     public IDataSetRepository DataSets { get; }
-    public IStagingTableRepository DynamicTables { get; }
+    public IStagingTableRepository StagingTables { get; }
 
     public UnitOfWork(IDbConnection connection, IDataSetRepository dataSets, IStagingTableRepository dynamicTables)
     {
         _connection = connection ?? throw new ArgumentNullException(nameof(connection));
         DataSets = dataSets ?? throw new ArgumentNullException(nameof(dataSets));
-        DynamicTables = dynamicTables ?? throw new ArgumentNullException(nameof(dynamicTables));
+        StagingTables = dynamicTables ?? throw new ArgumentNullException(nameof(dynamicTables));
     }
 
     public void Begin()
@@ -26,7 +26,7 @@ public class UnitOfWork : IUnitOfWork
         _transaction = _connection.BeginTransaction();
 
         DataSets.SetTransaction(_transaction);
-        DynamicTables.SetTransaction(_transaction);
+        StagingTables.SetTransaction(_transaction);
     }
 
     public void Commit()

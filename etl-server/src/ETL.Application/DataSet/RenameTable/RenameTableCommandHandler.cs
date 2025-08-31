@@ -19,7 +19,7 @@ public class RenameTableCommandHandler : IRequestHandler<RenameTableCommand, Res
 
         try
         {
-            await _uow.DynamicTables.RenameTableAsync(request.OldTableName, request.NewTableName, cancellationToken);
+            await _uow.StagingTables.RenameTableAsync(request.OldTableName, request.NewTableName, cancellationToken);
 
             var dataSet = await _uow.DataSets.GetByTableNameAsync(request.OldTableName, cancellationToken);
             if (dataSet == null)

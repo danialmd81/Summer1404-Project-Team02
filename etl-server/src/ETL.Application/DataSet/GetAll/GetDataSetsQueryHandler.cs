@@ -11,7 +11,7 @@ public class GetDataSetsQueryHandler : IRequestHandler<GetDataSetsQuery, Result<
 
     public GetDataSetsQueryHandler(IUnitOfWork uow)
     {
-        _uow = uow;
+        _uow = uow ?? throw new ArgumentNullException(nameof(uow));
     }
 
     public async Task<Result<IEnumerable<DataSetDto>>> Handle(GetDataSetsQuery request, CancellationToken cancellationToken)

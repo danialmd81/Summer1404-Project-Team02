@@ -17,7 +17,7 @@ public class DeleteColumnCommandHandler : IRequestHandler<DeleteColumnCommand, U
         _uow.Begin();
         try
         {
-            await _uow.DynamicTables.DeleteColumnAsync(request.TableName, request.ColumnName, cancellationToken);
+            await _uow.StagingTables.DeleteColumnAsync(request.TableName, request.ColumnName, cancellationToken);
             _uow.Commit();
             return Unit.Value;
         }

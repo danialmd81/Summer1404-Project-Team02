@@ -30,7 +30,7 @@ public class UploadCsvCommandHandler : IRequestHandler<UploadCsvCommand, Result>
         {
             var dataSet = new DataSetMetadata(request.TableName, request.UserId);
 
-            await _uow.DynamicTables.CreateTableFromCsvAsync(request.TableName, request.FileStream, cancellationToken);
+            await _uow.StagingTables.CreateTableFromCsvAsync(request.TableName, request.FileStream, cancellationToken);
 
             await _uow.DataSets.AddAsync(dataSet, cancellationToken);
 
