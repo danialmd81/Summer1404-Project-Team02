@@ -1,7 +1,6 @@
 ﻿using System.Data;
 using Dapper;
 using ETL.Application.Abstractions.Repositories;
-using ETL.Application.Common.DTOs;
 using ETL.Domain.Entities;
 using SqlKata;
 using SqlKata.Compilers;
@@ -25,18 +24,18 @@ public class DataSetRepository : IDataSetRepository
         _transaction = transaction;
     }
 
-    public async Task<IEnumerable<DataSetDto>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<DataSetMetadata>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var query = new Query("data_sets").Select("*");
 
         var sql = _compiler.Compile(query);
 
-        var rows = await _db.QueryAsync<DataSetDto>(sql.Sql, sql.NamedBindings, _transaction);
+        var rows = await _db.QueryAsync<DataSetMetadata>(sql.Sql, sql.NamedBindings, _transaction);
 
         return rows;
     }
 
-    public async Task<DataSetDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<DataSetMetadata?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var query = new Query("data_sets")
             .Where("id", id)
@@ -44,16 +43,16 @@ public class DataSetRepository : IDataSetRepository
 
         var sql = _compiler.Compile(query);
 
-        return await _db.QuerySingleOrDefaultAsync<DataSetDto?>(sql.Sql, sql.NamedBindings, _transaction);
+        return await _db.QuerySingleOrDefaultAsync<DataSetMetadata?>(sql.Sql, sql.NamedBindings, _transaction);
     }
 
-    public async Task<DataSetDto?> GetByTableNameAsync(string tableName, CancellationToken cancellationToken = default)
+    public async Task<DataSetMetadata?> GetByTableNameAsync(string tableName, CancellationToken cancellationToken = default)
     {
         var query = new Query("data_sets").Where("table_name", tableName).Select("*");
 
         var sql = _compiler.Compile(query);
 
-        return await _db.QueryFirstOrDefaultAsync<DataSetDto>(sql.Sql, sql.NamedBindings, _transaction);
+        return await _db.QueryFirstOrDefaultAsync<DataSetMetadata>(sql.Sql, sql.NamedBindings, _transaction);
     }
 
     public async Task AddAsync(DataSetMetadata dataSet, CancellationToken cancellationToken = default)
