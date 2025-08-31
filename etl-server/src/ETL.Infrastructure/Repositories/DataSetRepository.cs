@@ -26,8 +26,10 @@ public class DataSetRepository : IDataSetRepository
 
     public async Task<IEnumerable<DataSetMetadata>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var query = new Query("data_sets").Select("*");
-
+        var query = new Query("data_sets")
+            .Select("id", "table_name as TableName", 
+                "uploaded_by_user_id as UploadedByUserId", 
+                "uploaded_at as CreatedAt");
         var sql = _compiler.Compile(query);
 
         var rows = await _db.QueryAsync<DataSetMetadata>(sql.Sql, sql.NamedBindings, _transaction);
@@ -62,6 +64,7 @@ public class DataSetRepository : IDataSetRepository
             id = dataSet.Id,
             table_name = dataSet.TableName,
             uploaded_by_user_id = dataSet.UploadedByUserId,
+            uploaded_at = dataSet.CreatedAt,
         });
 
         var sql = _compiler.Compile(query);
