@@ -10,7 +10,7 @@ public class RenameTableCommandHandler : IRequestHandler<RenameTableCommand, Res
 
     public RenameTableCommandHandler(IUnitOfWork uow)
     {
-        _uow = uow;
+        _uow = uow ?? throw new ArgumentNullException(nameof(uow));
     }
 
     public async Task<Result> Handle(RenameTableCommand request, CancellationToken cancellationToken)

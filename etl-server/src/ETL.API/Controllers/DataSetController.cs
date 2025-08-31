@@ -65,6 +65,14 @@ public class DataSetsController : ControllerBase
         return Ok("Table has been renamed.");
     }
 
+    [HttpPut("{tableName}/columns/rename")]
+    [Authorize(Policy = Policy.CanUploadFile)]
+    public async Task<IActionResult> RenameColumn(RenameColumnCommand request, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(request, cancellationToken);
+        return Ok("Column has been renamed.");
+    }
+
 
     [HttpDelete()]
     [Authorize(Policy = Policy.CanUploadFile)]
@@ -81,13 +89,5 @@ public class DataSetsController : ControllerBase
     {
         await _mediator.Send(request, cancellationToken);
         return Ok("Column has been deleted.");
-    }
-
-    [HttpPut("{tableName}/columns/rename")]
-    [Authorize(Policy = Policy.CanUploadFile)]
-    public async Task<IActionResult> RenameColumn(RenameColumnCommand request, CancellationToken cancellationToken)
-    {
-        await _mediator.Send(request, cancellationToken);
-        return Ok("Column has been renamed.");
     }
 }

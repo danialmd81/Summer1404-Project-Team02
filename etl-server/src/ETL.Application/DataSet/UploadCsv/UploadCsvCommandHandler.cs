@@ -13,7 +13,7 @@ public class UploadCsvCommandHandler : IRequestHandler<UploadCsvCommand, Result>
 
     public UploadCsvCommandHandler(IUnitOfWork uow)
     {
-        _uow = uow;
+        _uow = uow ?? throw new ArgumentNullException(nameof(uow));
     }
 
     public async Task<Result> Handle(UploadCsvCommand request, CancellationToken cancellationToken)

@@ -9,7 +9,7 @@ public class DeleteColumnCommandHandler : IRequestHandler<DeleteColumnCommand, U
 
     public DeleteColumnCommandHandler(IUnitOfWork uow)
     {
-        _uow = uow;
+        _uow = uow ?? throw new ArgumentNullException(nameof(uow));
     }
 
     public async Task<Unit> Handle(DeleteColumnCommand request, CancellationToken cancellationToken)

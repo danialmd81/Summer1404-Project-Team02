@@ -9,7 +9,7 @@ public class DeleteTableCommandHandler : IRequestHandler<DeleteTableCommand, Uni
 
     public DeleteTableCommandHandler(IUnitOfWork uow)
     {
-        _uow = uow;
+        _uow = uow ?? throw new ArgumentNullException(nameof(uow));
     }
 
     public async Task<Unit> Handle(DeleteTableCommand request, CancellationToken cancellationToken)

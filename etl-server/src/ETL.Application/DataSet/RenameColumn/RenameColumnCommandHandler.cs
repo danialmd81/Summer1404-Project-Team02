@@ -9,7 +9,7 @@ public class RenameColumnCommandHandler : IRequestHandler<RenameColumnCommand, U
 
     public RenameColumnCommandHandler(IUnitOfWork uow)
     {
-        _uow = uow;
+        _uow = uow ?? throw new ArgumentNullException(nameof(uow));
     }
 
     public async Task<Unit> Handle(RenameColumnCommand request, CancellationToken cancellationToken)
