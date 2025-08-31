@@ -33,6 +33,9 @@ public static class AuthorizationExtension
 
             options.AddPolicy(Policy.CanReadAllDataSets, policy =>
                 policy.RequireRole(Role.SystemAdmin, Role.DataAdmin, Role.Analyst));
+
+            options.AddPolicy(Policy.CanRenameDataSet, policy =>
+                policy.RequireRole(Role.SystemAdmin, Role.DataAdmin));
         });
 
         return services;

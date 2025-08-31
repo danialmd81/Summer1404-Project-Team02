@@ -1,7 +1,8 @@
-﻿using ETL.Application.Common.DTOs;
+﻿using ETL.Application.Common;
+using ETL.Application.Common.DTOs;
 using MediatR;
 
 namespace ETL.Application.DataSet.GetAll;
 
-public record GetDataSetsQuery() : IRequest<IEnumerable<DataSetDto>>;
+public record GetDataSetsQuery() : IRequest<Result<IEnumerable<DataSetDto>>>;
 

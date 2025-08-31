@@ -1,12 +1,12 @@
 ﻿using System.Security.Claims;
 using ETL.API.Infrastructure;
 using ETL.Application.Common.Constants;
-using ETL.Application.Data.GetDataSets;
-using ETL.Application.Data.UploadCsv;
 using ETL.Application.DataSet.DeleteColumn;
 using ETL.Application.DataSet.DeleteTable;
+using ETL.Application.DataSet.GetAll;
 using ETL.Application.DataSet.RenameColumn;
 using ETL.Application.DataSet.RenameTable;
+using ETL.Application.DataSet.UploadCsv;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -40,7 +40,7 @@ public class DataSetsController : ControllerBase
             this.ToActionResult(result.Error);
         }
 
-        return Ok(new { message = "File stored in database." });
+        return Ok(new { message = "File has been stored in database." });
     }
 
     [HttpGet]
@@ -48,7 +48,7 @@ public class DataSetsController : ControllerBase
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetDataSetsQuery(), cancellationToken);
-        return Ok(result);
+        return Ok(result.Value);
     }
 
     [HttpPut("rename")]
