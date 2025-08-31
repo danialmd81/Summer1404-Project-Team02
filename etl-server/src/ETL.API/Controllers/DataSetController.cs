@@ -75,20 +75,26 @@ public class DataSetsController : ControllerBase
     }
 
 
-    [HttpDelete()]
-    [Authorize(Policy = Policy.CanUploadFile)]
+    [HttpDelete("remove-table")]
+    [Authorize(Policy = Policy.CanDeleteTable)]
     public async Task<IActionResult> DeleteTable(DeleteTableCommand request, CancellationToken cancellationToken)
     {
-        await _mediator.Send(request, cancellationToken);
+        var result = await _mediator.Send(request, cancellationToken);
 
-        return Ok("Table has been deleted.");
+        if (result.IsFailure)
+            this.ToActionResult(result.Error);
+
+        return Ok("Table has been removed.");
     }
 
-    [HttpDelete("{tableName}/columns/{columnName}")]
-    [Authorize(Policy = Policy.CanUploadFile)]
+    [HttpDelete("remove-column")]
+    [Authorize(Policy = Policy.CanDeleteColumn)]
     public async Task<IActionResult> DeleteColumn(DeleteColumnCommand request, CancellationToken cancellationToken)
     {
-        await _mediator.Send(request, cancellationToken);
-        return Ok("Column has been deleted.");
+        var result = await _mediator.Send(request, cancellationToken);
+        if (result.IsFailure)
+            this.ToActionResult(result.Error);
+
+        return Ok("Column has been removed.");
     }
 }

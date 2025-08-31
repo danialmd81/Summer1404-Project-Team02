@@ -1,9 +1,10 @@
 ﻿using ETL.Application.Abstractions.Data;
+using ETL.Application.Common;
 using MediatR;
 
 namespace ETL.Application.DataSet.DeleteTable;
 
-public class DeleteTableCommandHandler : IRequestHandler<DeleteTableCommand, Unit>
+public class DeleteTableCommandHandler : IRequestHandler<DeleteTableCommand, Result>
 {
     private readonly IUnitOfWork _uow;
 
@@ -12,16 +13,14 @@ public class DeleteTableCommandHandler : IRequestHandler<DeleteTableCommand, Uni
         _uow = uow ?? throw new ArgumentNullException(nameof(uow));
     }
 
-    public async Task<Unit> Handle(DeleteTableCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(DeleteTableCommand request, CancellationToken cancellationToken)
     {
         _uow.Begin();
 
         try
         {
-            // Drop physical table
             await _uow.StagingTables.DeleteTableAsync(request.TableName, cancellationToken);
 
-            // Remove metadata record
             var dataSet = await _uow.DataSets.GetByTableNameAsync(request.TableName, cancellationToken);
             if (dataSet != null)
             {
@@ -29,12 +28,12 @@ public class DeleteTableCommandHandler : IRequestHandler<DeleteTableCommand, Uni
             }
 
             _uow.Commit();
-            return Unit.Value;
+            return Result.Success();
         }
-        catch
+        catch (Exception ex)
         {
             _uow.Rollback();
-            throw;
+            return Result.Failure(Error.Problem("TableRemove.Failed", ex.Message));
         }
     }
 }
