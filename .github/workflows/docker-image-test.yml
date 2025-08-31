@@ -29,7 +29,7 @@ jobs:
         run: docker push registry.dockerize.ir/${{ github.repository }}/frontend:$(date +%Y%m%d%H%M%S)
 
       - name: Build backend image
-        run: docker build -f backend/Dockerfile -t registry.dockerize.ir/${{ github.repository }}/backend:$(date +%Y%m%d%H%M%S) ./backend
+        run: docker build -f etl-server/Dockerfile -t registry.dockerize.ir/${{ github.repository }}/backend:$(date +%Y%m%d%H%M%S) ./backend
 
       - name: Push backend image
         run: docker push registry.dockerize.ir/${{ github.repository }}/backend:$(date +%Y%m%d%H%M%S)
