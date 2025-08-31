@@ -5,6 +5,8 @@ using CsvHelper;
 using Dapper;
 using ETL.Application.Abstractions.Repositories;
 using Npgsql;
+using SqlKata;
+using SqlKata.Compilers;
 
 namespace ETL.Infrastructure.Repositories;
 
@@ -12,13 +14,15 @@ public class StagingTableRepository : IStagingTableRepository
 {
     private readonly IDbConnection _dbConnection;
     private IDbTransaction? _transaction;
+    private readonly Compiler _compiler;
 
 
-    public StagingTableRepository(IDbConnection dbConnection)
+
+    public StagingTableRepository(IDbConnection dbConnection, Compiler compiler)
     {
         _dbConnection = dbConnection ?? throw new ArgumentNullException(nameof(dbConnection));
+        _compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
     }
-
     public void SetTransaction(IDbTransaction? transaction)
     {
         _transaction = transaction;
@@ -113,6 +117,22 @@ public class StagingTableRepository : IStagingTableRepository
         await _dbConnection.ExecuteAsync(sql, _transaction);
     }
 
+    public async Task<bool> ColumnExistsAsync(string tableName, string columnName, CancellationToken cancellationToken = default)
+    {
+        var query = new Query("information_schema.columns")
+            .Where("table_name", tableName)
+            .Where("column_name", columnName)
+            .Where("table_schema", "public")
+            .AsCount();
+
+        var sql = _compiler.Compile(query);
+
+        var count = await _dbConnection.ExecuteScalarAsync<int>(
+            new CommandDefinition(sql.Sql, sql.NamedBindings, _transaction, cancellationToken: cancellationToken));
+
+        return count > 0;
+    }
+
     private string SanitizeIdentifier(string identifier)
     {
         if (string.IsNullOrWhiteSpace(identifier)) throw new ArgumentException("Identifier cannot be empty.");
@@ -122,4 +142,5 @@ public class StagingTableRepository : IStagingTableRepository
         if (string.IsNullOrWhiteSpace(sanitized)) throw new ArgumentException("Invalid identifier format.");
         return $"\"{sanitized}\"";
     }
+
 }

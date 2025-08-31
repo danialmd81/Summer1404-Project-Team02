@@ -10,4 +10,7 @@ public interface IStagingTableRepository : IRepository
 
     Task DeleteTableAsync(string tableName, CancellationToken cancellationToken = default);
     Task DeleteColumnAsync(string tableName, string columnName, CancellationToken cancellationToken = default);
+    
+    Task<bool> ColumnExistsAsync(string tableName, string columnName, CancellationToken cancellationToken = default);
+
 }

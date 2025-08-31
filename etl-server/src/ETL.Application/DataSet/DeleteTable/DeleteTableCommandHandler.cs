@@ -15,18 +15,20 @@ public class DeleteTableCommandHandler : IRequestHandler<DeleteTableCommand, Res
 
     public async Task<Result> Handle(DeleteTableCommand request, CancellationToken cancellationToken)
     {
+        var existingDataSet = await _uow.DataSets.GetByTableNameAsync(request.TableName, cancellationToken);
+        if (existingDataSet == null)
+        {
+            return Result.Failure(
+                Error.NotFound("TableRemove.Failed", $"Table '{request.TableName}' not  found!"));
+        }
+        
         _uow.Begin();
 
         try
         {
             await _uow.StagingTables.DeleteTableAsync(request.TableName, cancellationToken);
-
-            var dataSet = await _uow.DataSets.GetByTableNameAsync(request.TableName, cancellationToken);
-            if (dataSet != null)
-            {
-                await _uow.DataSets.DeleteAsync(dataSet, cancellationToken);
-            }
-
+            await _uow.DataSets.DeleteAsync(existingDataSet, cancellationToken);
+            
             _uow.Commit();
             return Result.Success();
         }

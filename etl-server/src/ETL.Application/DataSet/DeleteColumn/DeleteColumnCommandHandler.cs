@@ -15,6 +15,21 @@ public class DeleteColumnCommandHandler : IRequestHandler<DeleteColumnCommand, R
 
     public async Task<Result> Handle(DeleteColumnCommand request, CancellationToken cancellationToken)
     {
+        var existing = await _uow.DataSets.GetByTableNameAsync(request.TableName, cancellationToken);
+        if (existing == null)
+        {
+            return Result.Failure(
+                Error.NotFound("ColumnDelete.Failed", $"Table '{request.TableName}' not  found!"));
+        }
+
+        var columnExist =
+            _uow.StagingTables.ColumnExistsAsync(request.TableName, request.ColumnName, cancellationToken);
+        if (!columnExist.Result)
+        {
+            return Result.Failure(
+                Error.NotFound("ColumnDelete.Failed", $"Column '{request.ColumnName}' doesn't exists."));
+        }
+        
         _uow.Begin();
         try
         {

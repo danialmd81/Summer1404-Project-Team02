@@ -30,7 +30,7 @@ public class DataSetsController : ControllerBase
     {
         if (file == null || file.Length == 0) return BadRequest("No file uploaded.");
 
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
 
         var cmd = new UploadCsvCommand(tableName, file.OpenReadStream(), userId!);
         var result = await _mediator.Send(cmd, cancellationToken);
