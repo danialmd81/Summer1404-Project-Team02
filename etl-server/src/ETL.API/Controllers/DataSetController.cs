@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using ETL.API.Infrastructure;
 using ETL.Application.Common.Constants;
 using ETL.Application.Data.DeleteColumn;
 using ETL.Application.Data.DeleteTable;
@@ -16,9 +17,12 @@ namespace ETL.API.Controllers;
 [Route("api/datasets")]
 public class DataSetsController : ControllerBase
 {
-    private readonly ISender _mediator;
+    private readonly IMediator _mediator;
 
-    public DataSetsController(ISender mediator) => _mediator = mediator;
+    public DataSetsController(IMediator mediator)
+    {
+        _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+    }
 
     [HttpPost("upload")]
     [Authorize(Policy = Policy.CanUploadFile)]
@@ -26,12 +30,17 @@ public class DataSetsController : ControllerBase
     {
         if (file == null || file.Length == 0) return BadRequest("No file uploaded.");
 
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var cmd = new UploadCsvCommand(tableName, file.OpenReadStream(), userId);
-        var id = await _mediator.Send(cmd, cancellationToken);
+        var cmd = new UploadCsvCommand(tableName, file.OpenReadStream(), userId!);
+        var result = await _mediator.Send(cmd, cancellationToken);
 
-        return Ok(new { DataSetId = id });
+        if (result.IsFailure)
+        {
+            this.ToActionResult(result.Error);
+        }
+
+        return Ok(new { message = "File stored in database." });
     }
 
     [HttpGet]
@@ -41,7 +50,7 @@ public class DataSetsController : ControllerBase
         var result = await _mediator.Send(new GetDataSetsQuery(), cancellationToken);
         return Ok(result);
     }
-    
+
     [HttpPut("rename")]
     [Authorize(Policy = Policy.CanUploadFile)]
     public async Task<IActionResult> RenameTable([FromBody] RenameTableCommand request, CancellationToken cancellationToken)
@@ -60,7 +69,7 @@ public class DataSetsController : ControllerBase
 
         return Ok("Table has been deleted.");
     }
-    
+
     [HttpDelete("{tableName}/columns/{columnName}")]
     [Authorize(Policy = Policy.CanUploadFile)]
     public async Task<IActionResult> DeleteColumn(DeleteColumnCommand request, CancellationToken cancellationToken)
@@ -68,7 +77,7 @@ public class DataSetsController : ControllerBase
         await _mediator.Send(request, cancellationToken);
         return Ok("Column has been deleted.");
     }
-    
+
     [HttpPut("{tableName}/columns/rename")]
     [Authorize(Policy = Policy.CanUploadFile)]
     public async Task<IActionResult> RenameColumn(RenameColumnCommand request, CancellationToken cancellationToken)

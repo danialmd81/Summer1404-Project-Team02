@@ -10,9 +10,9 @@ public class UnitOfWork : IUnitOfWork
     private IDbTransaction? _transaction;
 
     public IDataSetRepository DataSets { get; }
-    public IDynamicTableRepository DynamicTables { get; }
+    public IStagingTableRepository DynamicTables { get; }
 
-    public UnitOfWork(IDbConnection connection, IDataSetRepository dataSets, IDynamicTableRepository dynamicTables)
+    public UnitOfWork(IDbConnection connection, IDataSetRepository dataSets, IStagingTableRepository dynamicTables)
     {
         _connection = connection;
         DataSets = dataSets;

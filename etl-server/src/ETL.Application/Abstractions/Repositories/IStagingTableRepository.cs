@@ -1,6 +1,6 @@
 ﻿namespace ETL.Application.Abstractions.Repositories;
 
-public interface IDynamicTableRepository : IRepository
+public interface IStagingTableRepository : IRepository
 {
     Task CreateTableFromCsvAsync(string tableName, Stream csvStream, CancellationToken cancellationToken = default);
 

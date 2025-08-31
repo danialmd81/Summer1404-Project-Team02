@@ -6,7 +6,7 @@ using ETL.Application.Abstractions.UserServices;
 using ETL.Infrastructure.Data;
 using ETL.Infrastructure.OAuth;
 using ETL.Infrastructure.OAuth.Abstractions;
-using ETL.Infrastructure.Repository;
+using ETL.Infrastructure.Repositories;
 using ETL.Infrastructure.Security;
 using ETL.Infrastructure.UserServices;
 using Microsoft.Extensions.Configuration;
@@ -60,7 +60,7 @@ public static class DependencyInjection
         {
             return new NpgsqlConnection(config.GetConnectionString("DefaultConnection"));
         });
-        services.AddScoped<IDynamicTableRepository, DynamicTableRepository>();
+        services.AddScoped<IStagingTableRepository, StagingTableRepository>();
         services.AddScoped<IDataSetRepository, DataSetRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<Compiler, PostgresCompiler>();

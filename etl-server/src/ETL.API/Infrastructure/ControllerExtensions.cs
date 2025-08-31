@@ -11,7 +11,7 @@ namespace ETL.API.Infrastructure
 
             return error.Type switch
             {
-                ErrorType.Validation => controller.BadRequest(payload()),
+                ErrorType.Validation | ErrorType.Failure => controller.BadRequest(payload()),
                 ErrorType.NotFound => controller.NotFound(payload()),
                 ErrorType.Conflict => controller.Conflict(payload()),
                 ErrorType.Problem => controller.StatusCode(500, payload()),

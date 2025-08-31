@@ -6,19 +6,19 @@ using Dapper;
 using ETL.Application.Abstractions.Repositories;
 using Npgsql;
 
-namespace ETL.Infrastructure.Repository;
+namespace ETL.Infrastructure.Repositories;
 
-public class DynamicTableRepository : IDynamicTableRepository
+public class StagingTableRepository : IStagingTableRepository
 {
     private readonly IDbConnection _dbConnection;
     private IDbTransaction? _transaction;
 
 
-    public DynamicTableRepository(IDbConnection dbConnection)
+    public StagingTableRepository(IDbConnection dbConnection)
     {
         _dbConnection = dbConnection;
     }
-    
+
     public void SetTransaction(IDbTransaction? transaction)
     {
         _transaction = transaction;
@@ -26,9 +26,6 @@ public class DynamicTableRepository : IDynamicTableRepository
 
     public async Task CreateTableFromCsvAsync(string tableName, Stream csvStream, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(tableName)) throw new ArgumentException("tableName required", nameof(tableName));
-
-        // Ensure we have a seekable stream for re-reading; if not, copy to MemoryStream (be careful for very large files)
         Stream workingStream;
         if (csvStream.CanSeek)
         {
@@ -42,51 +39,43 @@ public class DynamicTableRepository : IDynamicTableRepository
             workingStream.Position = 0;
         }
 
-        // Read header using CsvHelper
-        using (var headerReader = new StreamReader(workingStream, leaveOpen: true))
-        using (var csv = new CsvReader(headerReader, CultureInfo.InvariantCulture))
+        using var headerReader = new StreamReader(workingStream, leaveOpen: true);
+        using var csv = new CsvReader(headerReader, CultureInfo.InvariantCulture);
+        if (!csv.Read()) throw new InvalidOperationException("CSV is empty");
+        csv.ReadHeader();
+        var headers = csv.HeaderRecord ?? throw new InvalidOperationException("Failed to read CSV header");
+
+        var sanitizedTableName = SanitizeIdentifier(tableName);
+        var sanitizedColumns = headers.Select(h => $"{SanitizeIdentifier(h)} TEXT");
+        var createTableSql = $"CREATE TABLE IF NOT EXISTS {sanitizedTableName} ({string.Join(", ", sanitizedColumns)});";
+        await _dbConnection.ExecuteAsync(createTableSql, _transaction);
+
+        workingStream.Position = 0;
+
+        var copyColumns = string.Join(", ", headers.Select(SanitizeIdentifier));
+        var copySql = $"COPY {sanitizedTableName} ({copyColumns}) FROM STDIN (FORMAT CSV, HEADER true)";
+
+        if (_dbConnection is not NpgsqlConnection npgsql) throw new InvalidOperationException("Database connection is not NpgsqlConnection");
+
+        using (var reader = new StreamReader(workingStream, leaveOpen: true))
+        using (var writer = await npgsql.BeginTextImportAsync(copySql))
         {
-            if (!csv.Read()) throw new InvalidOperationException("CSV is empty");
-            csv.ReadHeader();
-            var headers = csv.HeaderRecord ?? throw new InvalidOperationException("Failed to read CSV header");
-
-            // Create table
-            var sanitizedTableName = SanitizeIdentifier(tableName);
-            var sanitizedColumns = headers.Select(h => $"{SanitizeIdentifier(h)} TEXT");
-            var createTableSql = $"CREATE TABLE IF NOT EXISTS {sanitizedTableName} ({string.Join(", ", sanitizedColumns)});";
-            await _dbConnection.ExecuteAsync(createTableSql, _transaction);
-
-            // Rewind to stream start for COPY
-            workingStream.Position = 0;
-
-            // Use Npgsql BeginTextImportAsync to stream CSV into COPY
-            var copyColumns = string.Join(", ", headers.Select(SanitizeIdentifier));
-            var copySql = $"COPY {sanitizedTableName} ({copyColumns}) FROM STDIN (FORMAT CSV, HEADER true)";
-
-            // Cast IDbConnection to NpgsqlConnection (registered as NpgsqlConnection in DI)
-            if (!(_dbConnection is NpgsqlConnection npgsql)) throw new InvalidOperationException("Database connection is not NpgsqlConnection");
-
-            using (var reader = new StreamReader(workingStream, leaveOpen: true))
-            using (var writer = await npgsql.BeginTextImportAsync(copySql))
+            var buffer = new char[81920];
+            while (!cancellationToken.IsCancellationRequested)
             {
-                // Stream chars in chunks
-                var buffer = new char[81920];
-                while (!cancellationToken.IsCancellationRequested)
-                {
-                    var read = await reader.ReadAsync(buffer, 0, buffer.Length);
-                    if (read == 0) break;
-                    await writer.WriteAsync(buffer, 0, read);
-                }
-                await writer.FlushAsync();
+                var read = await reader.ReadAsync(buffer, 0, buffer.Length);
+                if (read == 0) break;
+                await writer.WriteAsync(buffer, 0, read);
             }
+            await writer.FlushAsync(cancellationToken);
+        }
 
-            // clean up possible memory stream we created
-            if (!csvStream.CanSeek)
-            {
-                workingStream.Dispose();
-            }
+        if (!csvStream.CanSeek)
+        {
+            workingStream.Dispose();
         }
     }
+
     public async Task RenameTableAsync(string oldTableName, string newTableName, CancellationToken cancellationToken = default)
     {
         var sanitizedOld = SanitizeIdentifier(oldTableName);

@@ -5,7 +5,7 @@ namespace ETL.Application.Abstractions.Data;
 public interface IUnitOfWork : IDisposable
 {
     IDataSetRepository DataSets { get; }
-    IDynamicTableRepository DynamicTables { get; }
+    IStagingTableRepository DynamicTables { get; }
 
     void Begin();
     void Commit();
