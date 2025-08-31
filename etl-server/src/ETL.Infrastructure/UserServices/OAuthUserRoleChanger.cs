@@ -5,10 +5,10 @@ namespace ETL.Infrastructure.UserServices;
 
 public class OAuthUserRoleChanger : IOAuthUserRoleChanger
 {
-    private readonly IRoleRemover _roleRemover;
+    private readonly IOAuthRoleRemover _roleRemover;
     private readonly IOAuthRoleAssigner _roleAssigner;
 
-    public OAuthUserRoleChanger(IRoleRemover roleRemover, IOAuthRoleAssigner roleAssigner)
+    public OAuthUserRoleChanger(IOAuthRoleRemover roleRemover, IOAuthRoleAssigner roleAssigner)
     {
         _roleRemover = roleRemover ?? throw new ArgumentNullException(nameof(roleRemover));
         _roleAssigner = roleAssigner ?? throw new ArgumentNullException(nameof(roleAssigner));

@@ -1,12 +1,13 @@
 using ETL.API.Infrastructure;
 using ETL.Application;
 using ETL.Infrastructure;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddOpenApi();
 builder.Services.AddLogging();
 
 builder.Services.AddCors(options =>
@@ -31,8 +32,13 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();
+    app.MapScalarApiReference(option =>
+    {
+        option
+        .WithTitle("Fluxa")
+        .WithTheme(ScalarTheme.Default);
+    });
 }
 
 app.UseExceptionHandler();

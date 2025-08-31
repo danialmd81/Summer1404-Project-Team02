@@ -1,7 +1,7 @@
 ﻿using ETL.Application.Abstractions.Data;
 using MediatR;
 
-namespace ETL.Application.Data.DeleteColumn;
+namespace ETL.Application.DataSet.DeleteColumn;
 
 public class DeleteColumnCommandHandler : IRequestHandler<DeleteColumnCommand, Unit>
 {

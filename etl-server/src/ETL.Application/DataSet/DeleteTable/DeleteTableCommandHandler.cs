@@ -1,7 +1,7 @@
 ﻿using ETL.Application.Abstractions.Data;
 using MediatR;
 
-namespace ETL.Application.Data.DeleteTable;
+namespace ETL.Application.DataSet.DeleteTable;
 
 public class DeleteTableCommandHandler : IRequestHandler<DeleteTableCommand, Unit>
 {

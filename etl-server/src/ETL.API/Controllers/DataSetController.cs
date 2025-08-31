@@ -1,12 +1,12 @@
 ﻿using System.Security.Claims;
 using ETL.API.Infrastructure;
 using ETL.Application.Common.Constants;
-using ETL.Application.Data.DeleteColumn;
-using ETL.Application.Data.DeleteTable;
 using ETL.Application.Data.GetDataSets;
-using ETL.Application.Data.RenameColumn;
-using ETL.Application.Data.RenameTable;
 using ETL.Application.Data.UploadCsv;
+using ETL.Application.DataSet.DeleteColumn;
+using ETL.Application.DataSet.DeleteTable;
+using ETL.Application.DataSet.RenameColumn;
+using ETL.Application.DataSet.RenameTable;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -44,7 +44,7 @@ public class DataSetsController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize]
+    [Authorize(Policy = Policy.CanReadAllDataSets)]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetDataSetsQuery(), cancellationToken);

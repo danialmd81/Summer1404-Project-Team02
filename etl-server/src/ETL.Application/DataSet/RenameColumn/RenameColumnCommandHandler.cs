@@ -1,7 +1,7 @@
 ﻿using ETL.Application.Abstractions.Data;
 using MediatR;
 
-namespace ETL.Application.Data.RenameColumn;
+namespace ETL.Application.DataSet.RenameColumn;
 
 public class RenameColumnCommandHandler : IRequestHandler<RenameColumnCommand, Unit>
 {

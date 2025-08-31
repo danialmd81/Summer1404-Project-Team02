@@ -8,13 +8,13 @@ namespace ETL.Infrastructure.Tests.UserServices;
 
 public class OAuthUserRoleChangerTests
 {
-    private readonly IRoleRemover _roleRemover;
+    private readonly IOAuthRoleRemover _roleRemover;
     private readonly IOAuthRoleAssigner _roleAssigner;
     private readonly OAuthUserRoleChanger _sut;
 
     public OAuthUserRoleChangerTests()
     {
-        _roleRemover = Substitute.For<IRoleRemover>();
+        _roleRemover = Substitute.For<IOAuthRoleRemover>();
         _roleAssigner = Substitute.For<IOAuthRoleAssigner>();
 
         _sut = new OAuthUserRoleChanger(_roleRemover, _roleAssigner);

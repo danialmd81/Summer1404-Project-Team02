@@ -1,7 +1,7 @@
 ﻿using ETL.Application.Abstractions.Data;
 using MediatR;
 
-namespace ETL.Application.Data.RenameTable;
+namespace ETL.Application.DataSet.RenameTable;
 
 public class RenameTableCommandHandler : IRequestHandler<RenameTableCommand, Unit>
 {

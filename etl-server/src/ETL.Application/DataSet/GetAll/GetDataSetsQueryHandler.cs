@@ -2,7 +2,7 @@
 using ETL.Application.Common.DTOs;
 using MediatR;
 
-namespace ETL.Application.Data.GetDataSets;
+namespace ETL.Application.DataSet.GetAll;
 
 public class GetDataSetsQueryHandler : IRequestHandler<GetDataSetsQuery, IEnumerable<DataSetDto>>
 {
@@ -16,6 +16,6 @@ public class GetDataSetsQueryHandler : IRequestHandler<GetDataSetsQuery, IEnumer
     public async Task<IEnumerable<DataSetDto>> Handle(GetDataSetsQuery request, CancellationToken cancellationToken)
     {
         var items = await _uow.DataSets.GetAllAsync(cancellationToken);
-        return items.Select(d => new DataSetDto(d.Id, d.TableName, d.UploadedByUserId, d.UploadedAt));
+        return items.Select(d => new DataSetDto(d.Id, d.TableName, d.UploadedByUserId, d.CreatedAt));
     }
 }

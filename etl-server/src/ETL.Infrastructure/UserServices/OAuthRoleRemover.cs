@@ -5,13 +5,13 @@ using Microsoft.Extensions.Configuration;
 
 namespace ETL.Infrastructure.UserServices;
 
-public class RoleRemover : IRoleRemover
+public class OAuthRoleRemover : IOAuthRoleRemover
 {
     private readonly IOAuthGetJsonArray _getArray;
     private readonly IOAuthDeleteJson _delete;
     private readonly IConfiguration _configuration;
 
-    public RoleRemover(IOAuthGetJsonArray getArray, IOAuthDeleteJson delete, IConfiguration configuration)
+    public OAuthRoleRemover(IOAuthGetJsonArray getArray, IOAuthDeleteJson delete, IConfiguration configuration)
     {
         _getArray = getArray ?? throw new ArgumentNullException(nameof(getArray));
         _delete = delete ?? throw new ArgumentNullException(nameof(delete));

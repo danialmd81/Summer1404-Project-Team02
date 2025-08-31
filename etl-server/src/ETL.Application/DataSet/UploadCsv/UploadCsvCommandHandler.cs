@@ -3,7 +3,7 @@ using ETL.Application.Common;
 using ETL.Domain.Entities;
 using MediatR;
 
-namespace ETL.Application.Data.UploadCsv;
+namespace ETL.Application.DataSet.UploadCsv;
 
 
 public class UploadCsvCommandHandler : IRequestHandler<UploadCsvCommand, Result>

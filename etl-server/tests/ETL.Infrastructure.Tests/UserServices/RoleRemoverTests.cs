@@ -13,7 +13,7 @@ public class RoleRemoverTests
     private readonly IOAuthGetJsonArray _getArray;
     private readonly IOAuthDeleteJson _delete;
     private readonly IConfiguration _configuration;
-    private readonly RoleRemover _sut;
+    private readonly OAuthRoleRemover _sut;
 
     public RoleRemoverTests()
     {
@@ -22,28 +22,28 @@ public class RoleRemoverTests
         _configuration = Substitute.For<IConfiguration>();
         _configuration["Authentication:Realm"].Returns("myrealm");
 
-        _sut = new RoleRemover(_getArray, _delete, _configuration);
+        _sut = new OAuthRoleRemover(_getArray, _delete, _configuration);
     }
 
     // Constructor null checks
     [Fact]
     public void Constructor_ShouldThrow_WhenGetArrayIsNull()
     {
-        Action act = () => new RoleRemover(null!, _delete, _configuration);
+        Action act = () => new OAuthRoleRemover(null!, _delete, _configuration);
         act.Should().Throw<ArgumentNullException>().WithParameterName("getArray");
     }
 
     [Fact]
     public void Constructor_ShouldThrow_WhenDeleteIsNull()
     {
-        Action act = () => new RoleRemover(_getArray, null!, _configuration);
+        Action act = () => new OAuthRoleRemover(_getArray, null!, _configuration);
         act.Should().Throw<ArgumentNullException>().WithParameterName("delete");
     }
 
     [Fact]
     public void Constructor_ShouldThrow_WhenConfigurationIsNull()
     {
-        Action act = () => new RoleRemover(_getArray, _delete, null!);
+        Action act = () => new OAuthRoleRemover(_getArray, _delete, null!);
         act.Should().Throw<ArgumentNullException>().WithParameterName("configuration");
     }
 
