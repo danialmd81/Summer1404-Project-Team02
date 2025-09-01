@@ -27,7 +27,7 @@ public class DeleteColumnCommandHandler : IRequestHandler<DeleteColumnCommand, R
         if (!columnExist.Result)
         {
             return Result.Failure(
-                Error.NotFound("ColumnDelete.Failed", $"Column '{request.ColumnName}' doesn't exists."));
+                Error.NotFound("ColumnDelete.Failed", $"Column '{request.ColumnName}' not found!"));
         }
         
         _uow.Begin();
