@@ -27,7 +27,7 @@ public class AuthController : ControllerBase
     {
         var authUrl = $"{_configuration["Authentication:Authority"]}/protocol/openid-connect/auth";
         var clientId = _configuration["Authentication:ClientId"];
-        var redirectUri = $"{_configuration["Authentication:RedirectUri"]}/{redirectPath}";
+        var redirectUri = $"{_configuration["Authentication:RedirectUri"]}/{redirectPath?.TrimStart('/')}";
 
         var finalUrl = $"{authUrl}?" +
                        $"client_id={Uri.EscapeDataString(clientId)}&" +

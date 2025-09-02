@@ -23,8 +23,6 @@ public abstract class OAuthHttpClientBase
     protected string BuildUrl(string relativePath)
     {
         var baseUrl = _configuration["Authentication:KeycloakBaseUrl"]?.TrimEnd('/');
-        if (string.IsNullOrWhiteSpace(baseUrl))
-            throw new InvalidOperationException("Authentication:KeycloakBaseUrl is not configured.");
 
         if (string.IsNullOrWhiteSpace(relativePath))
             throw new ArgumentException("relativePath is required", nameof(relativePath));

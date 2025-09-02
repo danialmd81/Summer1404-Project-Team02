@@ -30,7 +30,7 @@ public class DataSetsController : ControllerBase
     {
         if (file == null || file.Length == 0) return BadRequest("No file uploaded.");
 
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         var cmd = new UploadCsvCommand(tableName, file.OpenReadStream(), userId!);
         var result = await _mediator.Send(cmd, cancellationToken);
@@ -58,7 +58,7 @@ public class DataSetsController : ControllerBase
         if (result.IsFailure)
             return this.ToActionResult(result.Error);
 
-        return Ok("Table has been renamed.");
+        return Ok(new { message = "Table has been renamed." });
     }
 
     [HttpPut("rename-column")]
@@ -71,7 +71,7 @@ public class DataSetsController : ControllerBase
             return this.ToActionResult(result.Error);
 
 
-        return Ok("Column has been renamed.");
+        return Ok(new { message = "Column has been renamed." });
     }
 
 
@@ -84,7 +84,7 @@ public class DataSetsController : ControllerBase
         if (result.IsFailure)
             return this.ToActionResult(result.Error);
 
-        return Ok("Table has been removed.");
+        return Ok(new { message = "Table has been removed." });
     }
 
     [HttpDelete("remove-column")]
@@ -95,6 +95,6 @@ public class DataSetsController : ControllerBase
         if (result.IsFailure)
             return this.ToActionResult(result.Error);
 
-        return Ok("Column has been removed.");
+        return Ok(new { message = "Column has been removed." });
     }
 }
