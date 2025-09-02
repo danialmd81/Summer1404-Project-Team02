@@ -1,155 +1,150 @@
 ﻿using System.Data;
 using ETL.Application.Abstractions.Repositories;
 using ETL.Infrastructure.Data;
+using FluentAssertions;
 using NSubstitute;
 
-namespace ETL.Infrastructure.Tests.Data;
+namespace ETL.Infrastructure.Tests;
 
-public class UnitOfWorkTests
+public class UnitOfWorkTests : IDisposable
 {
+    private readonly IDbConnection _connection;
+    private readonly IDataSetRepository _dataSets;
+    private readonly IStagingTableRepository _staging;
+    private readonly IDbTransaction _transaction;
+    private readonly UnitOfWork _sut;
+
+    public UnitOfWorkTests()
+    {
+        _connection = Substitute.For<IDbConnection>();
+        _dataSets = Substitute.For<IDataSetRepository>();
+        _staging = Substitute.For<IStagingTableRepository>();
+        _transaction = Substitute.For<IDbTransaction>();
+
+        _connection.State.Returns(ConnectionState.Closed);
+        _connection.BeginTransaction().Returns(_transaction);
+
+        _sut = new UnitOfWork(_connection, _dataSets, _staging);
+    }
+
+    public void Dispose()
+    {
+        try { _sut.Dispose(); } catch { /* ignore */ }
+    }
+
+    [Fact]
+    public void Constructor_ShouldThrowArgumentNullException_WhenConnectionIsNull()
+    {
+        // Act
+        Action act = () => new UnitOfWork(null!, _dataSets, _staging);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("connection");
+    }
+
+    [Fact]
+    public void Constructor_ShouldThrowArgumentNullException_WhenDataSetsIsNull()
+    {
+        // Act
+        Action act = () => new UnitOfWork(_connection, null!, _staging);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("dataSets");
+    }
+
+    [Fact]
+    public void Constructor_ShouldThrowArgumentNullException_WhenStagingIsNull()
+    {
+        // Act
+        Action act = () => new UnitOfWork(_connection, _dataSets, null!);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("dynamicTables");
+    }
+
     [Fact]
     public void Begin_ShouldOpenConnectionAndBeginTransactionAndSetTransactions_WhenConnectionIsClosed()
     {
-        // Arrange
-        var conn = Substitute.For<IDbConnection>();
-        conn.State.Returns(ConnectionState.Closed);
-
-        var tx = Substitute.For<IDbTransaction>();
-        conn.BeginTransaction().Returns(tx);
-
-        var dataSets = Substitute.For<IDataSetRepository>();
-        var staging = Substitute.For<IStagingTableRepository>();
-
-        var uow = new UnitOfWork(conn, dataSets, staging);
-
         // Act
-        uow.Begin();
+        _sut.Begin();
 
         // Assert
-        conn.Received(1).Open();
-        conn.Received(1).BeginTransaction();
-        dataSets.Received(1).SetTransaction(tx);
-        staging.Received(1).SetTransaction(tx);
+        _connection.Received(1).Open();
+        _connection.Received(1).BeginTransaction();
+        _dataSets.Received(1).SetTransaction(_transaction);
+        _staging.Received(1).SetTransaction(_transaction);
     }
 
     [Fact]
     public void Begin_ShouldNotOpenConnection_WhenConnectionAlreadyOpen()
     {
-        // Arrange
-        var conn = Substitute.For<IDbConnection>();
-        conn.State.Returns(ConnectionState.Open);
-
-        var tx = Substitute.For<IDbTransaction>();
-        conn.BeginTransaction().Returns(tx);
-
-        var dataSets = Substitute.For<IDataSetRepository>();
-        var staging = Substitute.For<IStagingTableRepository>();
-
-        var uow = new UnitOfWork(conn, dataSets, staging);
+        _connection.State.Returns(ConnectionState.Open);
 
         // Act
-        uow.Begin();
+        _sut.Begin();
 
         // Assert
-        conn.DidNotReceive().Open();
-        conn.Received(1).BeginTransaction();
-        dataSets.Received(1).SetTransaction(tx);
-        staging.Received(1).SetTransaction(tx);
+        _connection.DidNotReceive().Open();
+        _connection.Received(1).BeginTransaction();
+        _dataSets.Received(1).SetTransaction(_transaction);
+        _staging.Received(1).SetTransaction(_transaction);
     }
 
     [Fact]
     public void Commit_ShouldCommitAndDisposeAndClearTransactionOnRepositories_WhenTransactionExists()
     {
         // Arrange
-        var conn = Substitute.For<IDbConnection>();
-        conn.State.Returns(ConnectionState.Closed);
-
-        var tx = Substitute.For<IDbTransaction>();
-        conn.BeginTransaction().Returns(tx);
-
-        var dataSets = Substitute.For<IDataSetRepository>();
-        var staging = Substitute.For<IStagingTableRepository>();
-
-        var uow = new UnitOfWork(conn, dataSets, staging);
-
-        uow.Begin();
+        _sut.Begin();
 
         // Act
-        uow.Commit();
+        _sut.Commit();
 
         // Assert
-        tx.Received(1).Commit();
-        tx.Received(1).Dispose();
-        dataSets.Received(1).SetTransaction(null);
-        staging.Received(1).SetTransaction(null);
+        _transaction.Received(1).Commit();
+        _transaction.Received(1).Dispose();
+        _dataSets.Received(1).SetTransaction(null);
+        _staging.Received(1).SetTransaction(null);
     }
 
     [Fact]
     public void Rollback_ShouldRollbackAndDisposeAndClearTransactionOnRepositories_WhenTransactionExists()
     {
         // Arrange
-        var conn = Substitute.For<IDbConnection>();
-        conn.State.Returns(ConnectionState.Closed);
-
-        var tx = Substitute.For<IDbTransaction>();
-        conn.BeginTransaction().Returns(tx);
-
-        var dataSets = Substitute.For<IDataSetRepository>();
-        var staging = Substitute.For<IStagingTableRepository>();
-
-        var uow = new UnitOfWork(conn, dataSets, staging);
-
-        uow.Begin();
+        _sut.Begin();
 
         // Act
-        uow.Rollback();
+        _sut.Rollback();
 
         // Assert
-        tx.Received(1).Rollback();
-        tx.Received(1).Dispose();
-        dataSets.Received(1).SetTransaction(null);
-        staging.Received(1).SetTransaction(null);
+        _transaction.Received(1).Rollback();
+        _transaction.Received(1).Dispose();
+        _dataSets.Received(1).SetTransaction(null);
+        _staging.Received(1).SetTransaction(null);
     }
 
     [Fact]
     public void Dispose_ShouldDisposeTransactionAndConnection_WhenCalledAfterBegin()
     {
         // Arrange
-        var conn = Substitute.For<IDbConnection>();
-        conn.State.Returns(ConnectionState.Closed);
-
-        var tx = Substitute.For<IDbTransaction>();
-        conn.BeginTransaction().Returns(tx);
-
-        var dataSets = Substitute.For<IDataSetRepository>();
-        var staging = Substitute.For<IStagingTableRepository>();
-
-        var uow = new UnitOfWork(conn, dataSets, staging);
-
-        uow.Begin();
+        _sut.Begin();
 
         // Act
-        uow.Dispose();
+        _sut.Dispose();
 
         // Assert
-        tx.Received(1).Dispose();
-        conn.Received(1).Dispose();
+        _transaction.Received(1).Dispose();
+        _connection.Received(1).Dispose();
     }
 
     [Fact]
     public void Dispose_ShouldDisposeConnection_WhenNoTransactionExists()
     {
-        // Arrange
-        var conn = Substitute.For<IDbConnection>();
-        var dataSets = Substitute.For<IDataSetRepository>();
-        var staging = Substitute.For<IStagingTableRepository>();
-
-        var uow = new UnitOfWork(conn, dataSets, staging);
-
         // Act
-        uow.Dispose();
+        _sut.Dispose();
 
         // Assert
-        conn.Received(1).Dispose();
+        _connection.Received(1).Dispose();
+
+        _transaction.DidNotReceive().Dispose();
     }
 }

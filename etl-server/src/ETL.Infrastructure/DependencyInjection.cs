@@ -56,14 +56,17 @@ public static class DependencyInjection
         services.AddScoped<IAuthCredentialValidator, AuthCredentialValidator>();
         services.AddScoped<IAuthRestPasswordService, AuthRestPasswordService>();
         services.AddScoped<IAuthLogoutService, AuthLogoutService>();
+
+        services.AddSingleton<Compiler, PostgresCompiler>();
+        services.AddScoped<IQueryCompiler, SqlKataCompilerAdapter>();
+        services.AddScoped<IDbExecutor, DapperDbExecutor>();
         services.AddScoped<IDbConnection>(sp =>
         {
             return new NpgsqlConnection(config.GetConnectionString("DefaultConnection"));
         });
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IStagingTableRepository, StagingTableRepository>();
         services.AddScoped<IDataSetRepository, DataSetRepository>();
-        services.AddScoped<IUnitOfWork, UnitOfWork>();
-        services.AddSingleton<Compiler, PostgresCompiler>();
 
 
         return services;
