@@ -1,4 +1,4 @@
-# Project Title
+# Fulxa - ETL
 
 Fluxa, an ETL software for Bussiness Inelligense, Data Integration and Data Analaysis purposes.
 
