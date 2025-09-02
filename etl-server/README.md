@@ -69,7 +69,6 @@ The solution is organized into the following projects:
 
     ```bash
     git clone https://github.com/Star-Academy/Summer1404-Project-Team02.git
-    cd your-repository
     ```
 
 2.  **Restore dependencies:**
