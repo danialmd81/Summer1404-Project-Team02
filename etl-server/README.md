@@ -91,7 +91,7 @@ The application uses environment variables for configuration. You'll need to set
 | `Authentication__Authority`            | The base URL of the Keycloak authorization server. | `http://localhost:8080/realms/[realm-name]`                                                          |
 | `Authentication__ClientId`             | Client ID for the backend application.             | `server-client`                                                                                      |
 | `Authentication__ClientSecret`         | Client secret for the backend application.         | `???`                                                                                                |
-| `Authentication__RedirectUri`          | Redirect URI for authentication.                   | `http://localhost:4200`                                                                              |
+| `Authentication__RedirectUri`          | Redirect URI of frontend.                          | `http://localhost:4200`                                                                              |
 | `Authentication__KeycloakBaseUrl`      | The base URL of Keycloak.                          | `http://localhost:8080`                                                                              |
 | `Authentication__Realm`                | The Keycloak realm.                                | `team2`                                                                                              |
 | `KeycloakAdmin__ClientId`              | Client ID for Keycloak administration.             | `admin-client`                                                                                       |
