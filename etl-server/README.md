@@ -8,8 +8,9 @@ Fluxa, an ETL software for Bussiness Inelligense, Data Integration and Data Anal
 
 - [About the Project](#-about-the-project)
 - [Architecture](#-architecture)
+- [Technologies](#-technologies)
 - [Getting Started](#-getting-started)
-- [Configuration](#-configuration)
+- [Environment Variables](#-environment-variables)
 - [Docker](#-docker)
 - [API Documentation](#-api-documentation)
 - [License](#-license)
