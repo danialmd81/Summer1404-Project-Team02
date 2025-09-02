@@ -129,7 +129,7 @@ You can add `-e DOTNET_ENVIRONMENT=Development` flag, if you want to run in deve
 
 ## 📖 API Documentation
 
-The API documentation is available via Swagger UI. Once the application is running, navigate to:
+The API documentation is available via Scalar UI. Once the application is running, navigate to:
 
 ```
 http://localhost:8080/scalar
