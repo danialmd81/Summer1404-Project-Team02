@@ -99,18 +99,18 @@ The solution is organized into the following projects:
 
 The application uses environment variables for configuration. You'll need to set the following variables to run the application correctly:
 
-| Variable                               | Description                                        | Example Value                                                                                        |
-| :------------------------------------- | :------------------------------------------------- | :--------------------------------------------------------------------------------------------------- |
-| `DOTNET_ENVIRONMENT`                   | Development/Prodcuction.                           | `Development`                                                                                        |
-| `Authentication__Authority`            | The base URL of the Keycloak authorization server. | `http://localhost:8080/realms/[realm-name]`                                                          |
-| `Authentication__ClientId`             | Client ID for the backend application.             | `server-client`                                                                                      |
-| `Authentication__ClientSecret`         | Client secret for the backend application.         | `???`                                                                                                |
-| `Authentication__RedirectUri`          | Redirect URI of frontend.                          | `http://localhost:4200`                                                                              |
-| `Authentication__KeycloakBaseUrl`      | The base URL of Keycloak.                          | `http://localhost:8080`                                                                              |
-| `Authentication__Realm`                | The Keycloak realm.                                | `team2`                                                                                              |
-| `KeycloakAdmin__ClientId`              | Client ID for Keycloak administration.             | `admin-client`                                                                                       |
-| `KeycloakAdmin__ClientSecret`          | Client secret for Keycloak administration.         | `???`                                                                                                |
-| `ConnectionStrings__DefaultConnection` | The database connection string.                    | `Host=localhost;Port=5432;Database=[you-database];Username=[your-username];Password=[your-password]` |
+| Variable                               | Description                                        | Example Value                                                                                         |
+| :------------------------------------- | :------------------------------------------------- | :---------------------------------------------------------------------------------------------------- |
+| `DOTNET_ENVIRONMENT`                   | Development/Prodcuction.                           | `Development`                                                                                         |
+| `Authentication__Authority`            | The base URL of the Keycloak authorization server. | `http://localhost:8080/realms/[realm-name]`                                                           |
+| `Authentication__ClientId`             | Client ID for the backend application.             | `server-client`                                                                                       |
+| `Authentication__ClientSecret`         | Client secret for the backend application.         | `???`                                                                                                 |
+| `Authentication__RedirectUri`          | Redirect URI of frontend.                          | `http://localhost:4200`                                                                               |
+| `Authentication__KeycloakBaseUrl`      | The base URL of Keycloak.                          | `http://localhost:8080`                                                                               |
+| `Authentication__Realm`                | The Keycloak realm.                                | `team2`                                                                                               |
+| `KeycloakAdmin__ClientId`              | Client ID for Keycloak administration.             | `admin-client`                                                                                        |
+| `KeycloakAdmin__ClientSecret`          | Client secret for Keycloak administration.         | `???`                                                                                                 |
+| `ConnectionStrings__DefaultConnection` | The database connection string.                    | `Host=localhost;Port=5432;Database=[your-database];Username=[your-username];Password=[your-password]` |
 
 ---
 
