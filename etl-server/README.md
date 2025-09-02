@@ -79,17 +79,17 @@ The solution is organized into the following projects:
     ```
 
 3.  **Update the connection string:**
-    Ensure your `appsettings.json` file in the `ProjectName.API` project has the correct PostgreSQL connection string.
+    Ensure your `appsettings.json` file in the `ETL.API` project has the correct PostgreSQL connection string.
 
 4.  **Run migrations:**
 
     ```bash
-    dotnet ef database update --project ProjectName.Infrastructure --startup-project ProjectName.API
+    dotnet ef database update --project ETL.Infrastructure --startup-project ETL.API
     ```
 
 5.  **Run the API:**
     ```bash
-    dotnet run --project ProjectName.API
+    dotnet run --project ETL.API
     ```
     The API will be available at `http://localhost:8080` (or the port configured in `launchSettings.json`).
 
