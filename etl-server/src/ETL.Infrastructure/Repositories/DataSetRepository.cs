@@ -1,21 +1,20 @@
 ﻿using System.Data;
-using Dapper;
 using ETL.Application.Abstractions.Repositories;
 using ETL.Domain.Entities;
+using ETL.Infrastructure.Data;
 using SqlKata;
-using SqlKata.Compilers;
 
 namespace ETL.Infrastructure.Repositories;
 
 public class DataSetRepository : IDataSetRepository
 {
-    private readonly IDbConnection _db;
-    private readonly Compiler _compiler;
+    private readonly IDbExecutor _dbExecutor;
+    private readonly IQueryCompiler _compiler;
     private IDbTransaction? _transaction;
 
-    public DataSetRepository(IDbConnection db, Compiler compiler)
+    public DataSetRepository(IDbExecutor dbExecutor, IQueryCompiler compiler)
     {
-        _db = db ?? throw new ArgumentNullException(nameof(db));
+        _dbExecutor = dbExecutor ?? throw new ArgumentNullException(nameof(dbExecutor));
         _compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
     }
 
@@ -27,14 +26,13 @@ public class DataSetRepository : IDataSetRepository
     public async Task<IEnumerable<DataSetMetadata>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var query = new Query("data_sets")
-            .Select("id", "table_name as TableName", 
-                "uploaded_by_user_id as UploadedByUserId", 
+            .Select("id", "table_name as TableName",
+                "uploaded_by_user_id as UploadedByUserId",
                 "uploaded_at as CreatedAt");
+
         var sql = _compiler.Compile(query);
 
-        var rows = await _db.QueryAsync<DataSetMetadata>(sql.Sql, sql.NamedBindings, _transaction);
-
-        return rows;
+        return await _dbExecutor.QueryAsync<DataSetMetadata>(sql.Sql, sql.NamedBindings, _transaction);
     }
 
     public async Task<DataSetMetadata?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -45,7 +43,7 @@ public class DataSetRepository : IDataSetRepository
 
         var sql = _compiler.Compile(query);
 
-        return await _db.QuerySingleOrDefaultAsync<DataSetMetadata?>(sql.Sql, sql.NamedBindings, _transaction);
+        return await _dbExecutor.QuerySingleOrDefaultAsync<DataSetMetadata?>(sql.Sql, sql.NamedBindings, _transaction);
     }
 
     public async Task<DataSetMetadata?> GetByTableNameAsync(string tableName, CancellationToken cancellationToken = default)
@@ -54,7 +52,7 @@ public class DataSetRepository : IDataSetRepository
 
         var sql = _compiler.Compile(query);
 
-        return await _db.QueryFirstOrDefaultAsync<DataSetMetadata>(sql.Sql, sql.NamedBindings, _transaction);
+        return await _dbExecutor.QueryFirstOrDefaultAsync<DataSetMetadata>(sql.Sql, sql.NamedBindings, _transaction);
     }
 
     public async Task AddAsync(DataSetMetadata dataSet, CancellationToken cancellationToken = default)
@@ -69,7 +67,7 @@ public class DataSetRepository : IDataSetRepository
 
         var sql = _compiler.Compile(query);
 
-        await _db.ExecuteAsync(sql.Sql, sql.NamedBindings, _transaction);
+        await _dbExecutor.ExecuteAsync(sql.Sql, sql.NamedBindings, _transaction);
     }
 
     public async Task UpdateAsync(DataSetMetadata dataSet, CancellationToken cancellationToken = default)
@@ -80,7 +78,7 @@ public class DataSetRepository : IDataSetRepository
 
         var sql = _compiler.Compile(query);
 
-        await _db.ExecuteAsync(sql.Sql, sql.NamedBindings, _transaction);
+        await _dbExecutor.ExecuteAsync(sql.Sql, sql.NamedBindings, _transaction);
     }
 
     public async Task DeleteAsync(DataSetMetadata dataSet, CancellationToken cancellationToken = default)
@@ -89,6 +87,6 @@ public class DataSetRepository : IDataSetRepository
 
         var sql = _compiler.Compile(query);
 
-        await _db.ExecuteAsync(sql.Sql, sql.NamedBindings, _transaction);
+        await _dbExecutor.ExecuteAsync(sql.Sql, sql.NamedBindings, _transaction);
     }
 }
