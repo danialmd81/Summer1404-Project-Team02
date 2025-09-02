@@ -4,6 +4,8 @@ using MediatR;
 
 namespace ETL.Application.User.ChangeRole;
 
+public record ChangeUserRoleCommand(string UserId, string Role) : IRequest<Result>;
+
 public class ChangeUserRoleCommandHandler : IRequestHandler<ChangeUserRoleCommand, Result>
 {
     private readonly IOAuthUserRoleChanger _roleChanger;

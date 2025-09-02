@@ -8,7 +8,7 @@ using SqlKata;
 
 namespace ETL.Infrastructure.Repositories;
 
-public class StagingTableRepository : IStagingTableRepository
+public sealed class StagingTableRepository : IStagingTableRepository
 {
     private readonly IDbConnection _dbConnection;
     private IDbTransaction? _transaction;

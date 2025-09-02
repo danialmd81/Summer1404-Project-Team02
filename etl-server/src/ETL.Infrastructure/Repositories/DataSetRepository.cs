@@ -6,7 +6,7 @@ using SqlKata;
 
 namespace ETL.Infrastructure.Repositories;
 
-public class DataSetRepository : IDataSetRepository
+public sealed class DataSetRepository : IDataSetRepository
 {
     private readonly IDbExecutor _dbExecutor;
     private readonly IQueryCompiler _compiler;

@@ -4,6 +4,15 @@ using MediatR;
 
 namespace ETL.Application.User.Create;
 
+public record CreateUserCommand(
+    string Username,
+    string? Email,
+    string? FirstName,
+    string? LastName,
+    string Password,
+    string? Role
+) : IRequest<Result<string>>;
+
 public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Result<string>>
 {
     private readonly IOAuthUserCreator _userCreator;

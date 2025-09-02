@@ -5,6 +5,8 @@ using MediatR;
 
 namespace ETL.Application.User.GetAll;
 
+public record GetAllUsersQuery(int? First = null, int? Max = null) : IRequest<Result<IEnumerable<UserDto>>>;
+
 public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, Result<IEnumerable<UserDto>>>
 {
     private readonly IOAuthAllUserReader _allUserReader;

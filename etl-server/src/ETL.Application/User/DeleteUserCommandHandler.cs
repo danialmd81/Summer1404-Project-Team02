@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 
 namespace ETL.Application.User.Delete;
 
+public record DeleteUserCommand(string UserId) : IRequest<Result>;
+
 public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Result>
 {
     private readonly IOAuthUserDeleter _userDeleter;
