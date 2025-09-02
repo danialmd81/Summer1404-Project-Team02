@@ -1,6 +1,6 @@
 ﻿using System.Data;
 using ETL.Domain.Entities;
-using ETL.Infrastructure.Data;
+using ETL.Infrastructure.Data.Abstractions;
 using ETL.Infrastructure.Repositories;
 using FluentAssertions;
 using NSubstitute;

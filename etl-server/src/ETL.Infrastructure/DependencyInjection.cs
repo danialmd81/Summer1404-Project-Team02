@@ -4,6 +4,7 @@ using ETL.Application.Abstractions.Repositories;
 using ETL.Application.Abstractions.Security;
 using ETL.Application.Abstractions.UserServices;
 using ETL.Infrastructure.Data;
+using ETL.Infrastructure.Data.Abstractions;
 using ETL.Infrastructure.OAuth;
 using ETL.Infrastructure.OAuth.Abstractions;
 using ETL.Infrastructure.Repositories;
@@ -58,8 +59,9 @@ public static class DependencyInjection
         services.AddScoped<IAuthLogoutService, AuthLogoutService>();
 
         services.AddSingleton<Compiler, PostgresCompiler>();
-        services.AddScoped<IQueryCompiler, SqlKataCompilerAdapter>();
         services.AddScoped<IDbExecutor, DapperDbExecutor>();
+        services.AddScoped<IPostgresCopyAdapter, PostgresCopyAdapter>();
+        services.AddScoped<IQueryCompiler, SqlKataCompilerAdapter>();
         services.AddScoped<IDbConnection>(sp =>
         {
             return new NpgsqlConnection(config.GetConnectionString("DefaultConnection"));

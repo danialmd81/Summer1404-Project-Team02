@@ -1,6 +1,6 @@
 ﻿using SqlKata;
 
-namespace ETL.Infrastructure.Data;
+namespace ETL.Infrastructure.Data.Abstractions;
 
 public record CompiledQuery(string Sql, object NamedBindings);
 

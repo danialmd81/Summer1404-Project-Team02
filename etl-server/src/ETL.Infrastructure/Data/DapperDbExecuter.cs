@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using Dapper;
+using ETL.Infrastructure.Data.Abstractions;
 
 namespace ETL.Infrastructure.Data;
 
@@ -23,4 +24,10 @@ public class DapperDbExecutor : IDbExecutor
 
     public Task ExecuteAsync(string sql, object? param = null, IDbTransaction? transaction = null)
         => _connection.ExecuteAsync(sql, param, transaction);
+
+    public async Task<T> ExecuteScalarAsync<T>(string sql, object? param = null, IDbTransaction? transaction = null, CancellationToken cancellationToken = default)
+    {
+        var cmd = new CommandDefinition(sql, param, transaction, cancellationToken: cancellationToken);
+        return await _connection.ExecuteScalarAsync<T>(cmd);
+    }
 }

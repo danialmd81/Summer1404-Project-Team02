@@ -1,7 +1,7 @@
 ﻿using System.Data;
 using ETL.Application.Abstractions.Repositories;
 using ETL.Domain.Entities;
-using ETL.Infrastructure.Data;
+using ETL.Infrastructure.Data.Abstractions;
 using SqlKata;
 
 namespace ETL.Infrastructure.Repositories;

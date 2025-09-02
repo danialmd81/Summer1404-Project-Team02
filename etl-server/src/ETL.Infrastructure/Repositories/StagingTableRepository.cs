@@ -2,11 +2,9 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 using CsvHelper;
-using Dapper;
 using ETL.Application.Abstractions.Repositories;
-using Npgsql;
+using ETL.Infrastructure.Data.Abstractions;
 using SqlKata;
-using SqlKata.Compilers;
 
 namespace ETL.Infrastructure.Repositories;
 
@@ -14,15 +12,22 @@ public class StagingTableRepository : IStagingTableRepository
 {
     private readonly IDbConnection _dbConnection;
     private IDbTransaction? _transaction;
-    private readonly Compiler _compiler;
+    private readonly IQueryCompiler _compiler;
+    private readonly IDbExecutor _dbExecutor;
+    private readonly IPostgresCopyAdapter _copyAdapter;
 
-
-
-    public StagingTableRepository(IDbConnection dbConnection, Compiler compiler)
+    public StagingTableRepository(
+        IDbConnection dbConnection,
+        IDbExecutor dbExecutor,
+        IQueryCompiler compiler,
+        IPostgresCopyAdapter copyAdapter)
     {
         _dbConnection = dbConnection ?? throw new ArgumentNullException(nameof(dbConnection));
+        _dbExecutor = dbExecutor ?? throw new ArgumentNullException(nameof(dbExecutor));
         _compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
+        _copyAdapter = copyAdapter ?? throw new ArgumentNullException(nameof(copyAdapter));
     }
+
     public void SetTransaction(IDbTransaction? transaction)
     {
         _transaction = transaction;
@@ -30,6 +35,9 @@ public class StagingTableRepository : IStagingTableRepository
 
     public async Task CreateTableFromCsvAsync(string tableName, Stream csvStream, CancellationToken cancellationToken = default)
     {
+        if (tableName == null) throw new ArgumentNullException(nameof(tableName));
+        if (csvStream == null) throw new ArgumentNullException(nameof(csvStream));
+
         Stream workingStream;
         if (csvStream.CanSeek)
         {
@@ -52,17 +60,15 @@ public class StagingTableRepository : IStagingTableRepository
         var sanitizedTableName = SanitizeIdentifier(tableName);
         var sanitizedColumns = headers.Select(h => $"{SanitizeIdentifier(h)} TEXT");
         var createTableSql = $"CREATE TABLE IF NOT EXISTS {sanitizedTableName} ({string.Join(", ", sanitizedColumns)});";
-        await _dbConnection.ExecuteAsync(createTableSql, _transaction);
+        await _dbExecutor.ExecuteAsync(createTableSql, null, _transaction);
 
         workingStream.Position = 0;
 
         var copyColumns = string.Join(", ", headers.Select(SanitizeIdentifier));
         var copySql = $"COPY {sanitizedTableName} ({copyColumns}) FROM STDIN (FORMAT CSV, HEADER true)";
 
-        if (_dbConnection is not NpgsqlConnection npgsql) throw new InvalidOperationException("Database connection is not NpgsqlConnection");
-
         using (var reader = new StreamReader(workingStream, leaveOpen: true))
-        using (var writer = await npgsql.BeginTextImportAsync(copySql))
+        using (var writer = await _copyAdapter.BeginTextImportAsync(_dbConnection, copySql))
         {
             var buffer = new char[81920];
             while (!cancellationToken.IsCancellationRequested)
@@ -71,7 +77,7 @@ public class StagingTableRepository : IStagingTableRepository
                 if (read == 0) break;
                 await writer.WriteAsync(buffer, 0, read);
             }
-            await writer.FlushAsync(cancellationToken);
+            await writer.FlushAsync();
         }
 
         if (!csvStream.CanSeek)
@@ -86,7 +92,7 @@ public class StagingTableRepository : IStagingTableRepository
         var sanitizedNew = SanitizeIdentifier(newTableName);
 
         var sql = $"ALTER TABLE {sanitizedOld} RENAME TO {sanitizedNew};";
-        await _dbConnection.ExecuteAsync(sql, _transaction);
+        await _dbExecutor.ExecuteAsync(sql, null, _transaction);
     }
 
     public async Task RenameColumnAsync(string tableName, string oldColumnName, string newColumnName, CancellationToken cancellationToken = default)
@@ -96,17 +102,15 @@ public class StagingTableRepository : IStagingTableRepository
         var sanitizedNewCol = SanitizeIdentifier(newColumnName);
 
         var sql = $"ALTER TABLE {sanitizedTable} RENAME COLUMN {sanitizedOldCol} TO {sanitizedNewCol};";
-        await _dbConnection.ExecuteAsync(sql, _transaction);
+        await _dbExecutor.ExecuteAsync(sql, null, _transaction);
     }
 
     public async Task DeleteTableAsync(string tableName, CancellationToken cancellationToken = default)
     {
         var sanitized = SanitizeIdentifier(tableName);
-
         var sql = $"DROP TABLE IF EXISTS {sanitized};";
-        await _dbConnection.ExecuteAsync(sql, _transaction);
+        await _dbExecutor.ExecuteAsync(sql, null, _transaction);
     }
-
 
     public async Task DeleteColumnAsync(string tableName, string columnName, CancellationToken cancellationToken = default)
     {
@@ -114,7 +118,7 @@ public class StagingTableRepository : IStagingTableRepository
         var sanitizedCol = SanitizeIdentifier(columnName);
 
         var sql = $"ALTER TABLE {sanitizedTable} DROP COLUMN {sanitizedCol};";
-        await _dbConnection.ExecuteAsync(sql, _transaction);
+        await _dbExecutor.ExecuteAsync(sql, null, _transaction);
     }
 
     public async Task<bool> ColumnExistsAsync(string tableName, string columnName, CancellationToken cancellationToken = default)
@@ -127,8 +131,7 @@ public class StagingTableRepository : IStagingTableRepository
 
         var sql = _compiler.Compile(query);
 
-        var count = await _dbConnection.ExecuteScalarAsync<int>(
-            new CommandDefinition(sql.Sql, sql.NamedBindings, _transaction, cancellationToken: cancellationToken));
+        var count = await _dbExecutor.ExecuteScalarAsync<int>(sql.Sql, sql.NamedBindings, _transaction, cancellationToken);
 
         return count > 0;
     }
@@ -142,5 +145,4 @@ public class StagingTableRepository : IStagingTableRepository
         if (string.IsNullOrWhiteSpace(sanitized)) throw new ArgumentException("Invalid identifier format.");
         return $"\"{sanitized}\"";
     }
-
 }

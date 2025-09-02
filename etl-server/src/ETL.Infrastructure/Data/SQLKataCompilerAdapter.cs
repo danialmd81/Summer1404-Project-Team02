@@ -1,4 +1,5 @@
-﻿using SqlKata;
+﻿using ETL.Infrastructure.Data.Abstractions;
+using SqlKata;
 using SqlKata.Compilers;
 
 namespace ETL.Infrastructure.Data;
