@@ -1,31 +1,56 @@
 <div class="card flex justify-center">
-  <p-button (click)="showDialog()" label="Create User"/>
-  <p-dialog dismissableMask closeOnEscape header="Create User" [modal]="true" [(visible)]="visible"
-            (onHide)="hideDialog()"
-            [style]="{ width: '28rem' }">
-
+  <p-button (click)="showDialog()" label="Create User" />
+  <p-dialog
+    dismissableMask
+    closeOnEscape
+    header="Create User"
+    [modal]="true"
+    [(visible)]="visible"
+    (onHide)="hideDialog()"
+    [style]="{ width: '28rem' }"
+  >
     <div class="form-field">
       <label for="username">Username</label>
-      <input [value]="enteredUsername" (input)="enteredUsernameChangeHandler($event)" pInputText id="username"
-             autocomplete="off"/>
+      <input
+        [value]="enteredUsername"
+        (input)="enteredUsernameChangeHandler($event)"
+        pInputText
+        id="username"
+        autocomplete="off"
+      />
     </div>
 
     <div class="form-field">
       <label for="password">Password</label>
-      <input [value]="enteredPassword" (input)="enteredPasswordChangeHandler($event)" pInputText id="password"
-             type="password" autocomplete="off"/>
+      <input
+        [value]="enteredPassword"
+        (input)="enteredPasswordChangeHandler($event)"
+        pInputText
+        id="password"
+        type="password"
+        autocomplete="off"
+      />
     </div>
 
     <div class="form-field">
       <label for="email">Email</label>
-      <input [value]="enteredEmail" (input)="enteredEmailChangeHandler($event)" pInputText id="email" type="email"
-             autocomplete="off"/>
+      <input
+        [value]="enteredEmail"
+        (input)="enteredEmailChangeHandler($event)"
+        pInputText
+        id="email"
+        type="email"
+        autocomplete="off"
+      />
     </div>
 
     <div class="p-dialog-footer">
       <p-button label="Save" (click)="submitHandler()"></p-button>
-      <p-button label="Cancel" severity="secondary" (click)="hideDialog()"></p-button>
+      <p-button
+        label="Cancel"
+        severity="secondary"
+        (click)="hideDialog()"
+      ></p-button>
     </div>
   </p-dialog>
-
 </div>

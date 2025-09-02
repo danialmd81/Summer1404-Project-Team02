@@ -1,0 +1,13 @@
+
+:host {
+  display: flex;
+
+  app-sidebar {
+    width: 250px;
+  }
+
+  main {
+    width: calc(100% - 250px);
+    margin-inline-start: auto;
+  }
+}
