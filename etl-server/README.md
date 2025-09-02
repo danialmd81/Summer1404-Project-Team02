@@ -41,6 +41,18 @@ The solution is organized into the following projects:
 
 ---
 
+## 💻 Technologies
+
+- [ASP.NET Core 9](https://dotnet.microsoft.com/en-us/apps/aspnet)
+- [Angular 18](https://angular.io/)
+- [MediatR](https://github.com/jbogard/MediatR)
+- [AutoMapper](https://automapper.org/)
+- [FluentValidation](https://fluentvalidation.net/)
+- [Xunit](https://xunit.net/), [FluentAssertions](https://fluentassertions.com/), & [NSubstitude](https://nsubstitute.github.io)
+- [Docker](https://www.docker.com/)
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
