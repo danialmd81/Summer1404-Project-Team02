@@ -47,6 +47,7 @@ The solution is organized into the following projects:
 - [Angular 18](https://angular.io/)
 - [MediatR](https://github.com/jbogard/MediatR)
 - [AutoMapper](https://automapper.org/)
+- [Dapper](https://github.com/DapperLib/Dapper), [SQLKata](https://sqlkata.com/)
 - [FluentValidation](https://fluentvalidation.net/)
 - [Xunit](https://xunit.net/), [FluentAssertions](https://fluentassertions.com/), & [NSubstitude](https://nsubstitute.github.io)
 - [Docker](https://www.docker.com/)
