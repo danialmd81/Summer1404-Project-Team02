@@ -5,6 +5,8 @@ using MediatR;
 
 namespace ETL.Application.DataSet.GetAll;
 
+public record GetDataSetsQuery() : IRequest<Result<IEnumerable<DataSetDto>>>;
+
 public class GetDataSetsQueryHandler : IRequestHandler<GetDataSetsQuery, Result<IEnumerable<DataSetDto>>>
 {
     private readonly IUnitOfWork _uow;

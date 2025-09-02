@@ -4,7 +4,9 @@ using MediatR;
 
 namespace ETL.Application.DataSet.DeleteColumn;
 
-public class DeleteColumnCommandHandler : IRequestHandler<DeleteColumnCommand, Result>
+public record DeleteColumnCommand(string TableName, string ColumnName) : IRequest<Result>;
+
+public sealed class DeleteColumnCommandHandler : IRequestHandler<DeleteColumnCommand, Result>
 {
     private readonly IUnitOfWork _uow;
 

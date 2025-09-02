@@ -4,7 +4,9 @@ using MediatR;
 
 namespace ETL.Application.DataSet.RenameTable;
 
-public class RenameTableCommandHandler : IRequestHandler<RenameTableCommand, Result>
+public record RenameTableCommand(string OldTableName, string NewTableName) : IRequest<Result>;
+
+public sealed class RenameTableCommandHandler : IRequestHandler<RenameTableCommand, Result>
 {
     private readonly IUnitOfWork _uow;
 

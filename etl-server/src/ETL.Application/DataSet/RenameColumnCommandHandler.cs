@@ -4,7 +4,9 @@ using MediatR;
 
 namespace ETL.Application.DataSet.RenameColumn;
 
-public class RenameColumnCommandHandler : IRequestHandler<RenameColumnCommand, Result>
+public record RenameColumnCommand(string TableName, string OldColumnName, string NewColumnName) : IRequest<Result>;
+
+public sealed class RenameColumnCommandHandler : IRequestHandler<RenameColumnCommand, Result>
 {
     private readonly IUnitOfWork _uow;
 

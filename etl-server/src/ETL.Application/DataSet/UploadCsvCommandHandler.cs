@@ -5,6 +5,7 @@ using MediatR;
 
 namespace ETL.Application.DataSet.UploadCsv;
 
+public record UploadCsvCommand(string TableName, Stream FileStream, string UserId) : IRequest<Result>;
 
 public class UploadCsvCommandHandler : IRequestHandler<UploadCsvCommand, Result>
 {

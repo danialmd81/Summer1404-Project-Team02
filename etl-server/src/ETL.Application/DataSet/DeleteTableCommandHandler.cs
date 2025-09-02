@@ -4,7 +4,9 @@ using MediatR;
 
 namespace ETL.Application.DataSet.DeleteTable;
 
-public class DeleteTableCommandHandler : IRequestHandler<DeleteTableCommand, Result>
+public record DeleteTableCommand(string TableName) : IRequest<Result>;
+
+public sealed class DeleteTableCommandHandler : IRequestHandler<DeleteTableCommand, Result>
 {
     private readonly IUnitOfWork _uow;
 
