@@ -14,7 +14,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("Angular", policy =>
     {
-        policy.WithOrigins("http://localhost:4200")
+        policy.WithOrigins(builder.Configuration["Authentication:RedirectUri"])
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
