@@ -2,8 +2,6 @@
 using ETL.API.Infrastructure;
 using ETL.Application.Common.Constants;
 using ETL.Application.DataSet;
-using ETL.Application.DataSet.GetAll;
-using ETL.Application.DataSet.UploadCsv;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

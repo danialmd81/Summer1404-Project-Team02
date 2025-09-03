@@ -27,7 +27,7 @@ public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand
     public async Task<Result<string>> Handle(CreateUserCommand request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
-            return Result.Failure<string>(Error.Failure("User.Create.InvalidInput", "Username and password are required"));
+            return Result.Failure<string>(Error.Validation("User.Create.InvalidInput", "Username and password are required"));
 
         try
         {

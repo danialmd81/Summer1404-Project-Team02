@@ -6,7 +6,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace ETL.Infrastructure.Security;
 
-public class AuthTokenRefresher : ITokenRefresher
+public class AuthTokenRefresher : IAuthTokenRefresher
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _configuration;
@@ -17,10 +17,10 @@ public class AuthTokenRefresher : ITokenRefresher
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
     }
 
-    public async Task<Result<TokenResponse?>> RefreshAsync(string refreshToken, CancellationToken ct = default)
+    public async Task<Result<TokenResponse>> RefreshAsync(string refreshToken, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(refreshToken))
-            return Result.Failure<TokenResponse?>(Error.Validation("Auth.Refresh.MissingToken", "Refresh token is required."));
+            return Result.Failure<TokenResponse>(Error.Validation("Auth.Refresh.MissingToken", "Refresh token is required."));
 
         var httpClient = _httpClientFactory.CreateClient();
         var tokenEndpoint = $"{_configuration["Authentication:Authority"]}/protocol/openid-connect/token";
@@ -42,13 +42,13 @@ public class AuthTokenRefresher : ITokenRefresher
         }
         catch (Exception ex)
         {
-            return Result.Failure<TokenResponse?>(Error.Problem("Auth.HttpError", $"HTTP request failed: {ex.Message}"));
+            return Result.Failure<TokenResponse>(Error.Problem("Auth.HttpError", $"HTTP request failed: {ex.Message}"));
         }
 
         if (!response.IsSuccessStatusCode)
         {
             var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-            return Result.Failure<TokenResponse?>(Error.Problem("Auth.RefreshFailed", $"Token refresh failed: {response.StatusCode} - {body}"));
+            return Result.Failure<TokenResponse>(Error.Problem("Auth.RefreshFailed", $"Token refresh failed: {response.StatusCode} - {body}"));
         }
 
         TokenResponse? tokens;
@@ -58,11 +58,11 @@ public class AuthTokenRefresher : ITokenRefresher
         }
         catch (Exception ex)
         {
-            return Result.Failure<TokenResponse?>(Error.Problem("Auth.ParseFailed", $"Failed to parse token response: {ex.Message}"));
+            return Result.Failure<TokenResponse>(Error.Problem("Auth.ParseFailed", $"Failed to parse token response: {ex.Message}"));
         }
 
         if (tokens is null || string.IsNullOrEmpty(tokens.AccessToken))
-            return Result.Failure<TokenResponse?>(Error.Problem("Auth.EmptyToken", "Token response did not contain an access token."));
+            return Result.Failure<TokenResponse>(Error.Problem("Auth.EmptyToken", "Token response did not contain an access token."));
 
         return Result.Success(tokens);
     }

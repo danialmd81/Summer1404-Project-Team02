@@ -26,7 +26,7 @@ public sealed class ChangePasswordCommandHandler : IRequestHandler<ChangePasswor
             return Result.Failure(Error.Failure("Auth.InvalidRequest", "Request is missing"));
 
         if (dto.NewPassword != dto.ConfirmPassword)
-            return Result.Failure(Error.Failure("Auth.PasswordMismatch", "New password and confirmation do not match"));
+            return Result.Failure(Error.Validation("Auth.PasswordMismatch", "New password and confirmation do not match"));
 
         var user = request.User;
         var userId = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
@@ -37,7 +37,7 @@ public sealed class ChangePasswordCommandHandler : IRequestHandler<ChangePasswor
 
         var valid = await _credentialValidator.ValidateCredentialsAsync(username, dto.CurrentPassword ?? string.Empty, cancellationToken);
         if (!valid)
-            return Result.Failure(Error.Failure("Auth.InvalidCurrentPassword", "The current password is incorrect"));
+            return Result.Failure(Error.Validation("Auth.InvalidCurrentPassword", "The current password is incorrect"));
 
         var result = await _restPasswordService.ResetPasswordAsync(userId, dto.NewPassword ?? string.Empty, cancellationToken);
 

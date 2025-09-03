@@ -53,7 +53,7 @@ public static class DependencyInjection
         services.AddScoped<IOAuthUserRoleChanger, OAuthUserRoleChanger>();
         services.AddScoped<IAdminTokenService, AdminTokenService>();
         services.AddScoped<IAuthCodeForTokenExchanger, AuthCodeForTokenExchanger>();
-        services.AddScoped<ITokenRefresher, AuthTokenRefresher>();
+        services.AddScoped<IAuthTokenRefresher, AuthTokenRefresher>();
         services.AddScoped<IAuthCredentialValidator, AuthCredentialValidator>();
         services.AddScoped<IAuthRestPasswordService, AuthRestPasswordService>();
         services.AddScoped<IAuthLogoutService, AuthLogoutService>();

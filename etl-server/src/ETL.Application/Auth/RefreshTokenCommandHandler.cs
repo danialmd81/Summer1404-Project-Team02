@@ -9,9 +9,9 @@ public record RefreshTokenCommand(string RefreshToken) : IRequest<Result<TokenRe
 
 public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, Result<TokenResponse>>
 {
-    private readonly ITokenRefresher _tokenRefresher;
+    private readonly IAuthTokenRefresher _tokenRefresher;
 
-    public RefreshTokenCommandHandler(ITokenRefresher tokenRefresher)
+    public RefreshTokenCommandHandler(IAuthTokenRefresher tokenRefresher)
     {
         _tokenRefresher = tokenRefresher ?? throw new ArgumentNullException(nameof(tokenRefresher));
     }

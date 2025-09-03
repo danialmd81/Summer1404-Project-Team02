@@ -1,10 +1,6 @@
 ﻿using ETL.API.Infrastructure;
 using ETL.Application.Common.Constants;
 using ETL.Application.User;
-using ETL.Application.User.Delete;
-using ETL.Application.User.GetAll;
-using ETL.Application.User.GetById;
-using ETL.Application.User.GetCurrent;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

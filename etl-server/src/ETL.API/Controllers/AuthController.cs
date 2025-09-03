@@ -1,8 +1,5 @@
 ﻿using ETL.Application.Auth;
-using ETL.Application.Auth.ChangePassword;
 using ETL.Application.Auth.DTOs;
-using ETL.Application.Auth.Logout;
-using ETL.Application.Auth.Refresh;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
