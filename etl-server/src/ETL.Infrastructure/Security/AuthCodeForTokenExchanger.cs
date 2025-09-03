@@ -1,6 +1,5 @@
 ﻿using System.Net.Http.Json;
 using ETL.Application.Abstractions.Security;
-using ETL.Application.Common;
 using ETL.Application.Common.DTOs;
 using ETL.Application.Common.Options;
 using Microsoft.Extensions.Options;
@@ -18,7 +17,7 @@ public class AuthCodeForTokenExchanger : IAuthCodeForTokenExchanger
         _authOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 
-    public async Task<Result<TokenResponse>> ExchangeCodeForTokensAsync(string code, string redirectPath, CancellationToken ct = default)
+    public async Task<TokenResponse> ExchangeCodeForTokensAsync(string code, string redirectPath, CancellationToken ct = default)
     {
         var httpClient = _httpClientFactory.CreateClient();
         var tokenEndpoint = $"{_authOptions.Authority}/protocol/openid-connect/token";
@@ -40,10 +39,11 @@ public class AuthCodeForTokenExchanger : IAuthCodeForTokenExchanger
         if (!response.IsSuccessStatusCode)
         {
             var err = await response.Content.ReadAsStringAsync(ct);
-            return Result.Failure<TokenResponse>(Error.Failure("Auth.TokenExchangeFailed", $"Token exchange failed: {err}"));
+            throw new InvalidOperationException($"Token exchange failed: {err}");
         }
 
-        var tokenData = await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken: ct);
-        return tokenData;
+        var tokensData = await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken: ct);
+
+        return tokensData is null ? throw new InvalidOperationException("Failed to parse tokens from the response.") : tokensData;
     }
 }

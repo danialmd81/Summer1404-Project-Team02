@@ -2,6 +2,12 @@
 
 public record Error
 {
+    public string Code { get; }
+
+    public string Description { get; }
+
+    public ErrorType Type { get; }
+
     public static readonly Error None = new(string.Empty, string.Empty, ErrorType.Failure);
     public static readonly Error NullValue = new(
         "General.Null",
@@ -14,12 +20,6 @@ public record Error
         Description = description;
         Type = type;
     }
-
-    public string Code { get; }
-
-    public string Description { get; }
-
-    public ErrorType Type { get; }
 
     public static Error Failure(string code, string description) =>
         new(code, description, ErrorType.Failure);

@@ -1,5 +1,4 @@
 ﻿using ETL.Application.Abstractions.Security;
-using ETL.Application.Common;
 using ETL.Application.Common.Options;
 using Microsoft.Extensions.Options;
 
@@ -16,7 +15,7 @@ public class AuthLogoutService : IAuthLogoutService
         _authOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 
-    public async Task<Result> LogoutAsync(string? accessToken, string? refreshToken, CancellationToken ct = default)
+    public async Task LogoutAsync(string? accessToken, string? refreshToken, CancellationToken ct = default)
     {
         var httpClient = _httpClientFactory.CreateClient();
         var logoutEndpoint = $"{_authOptions.Authority}/protocol/openid-connect/logout";
@@ -41,9 +40,7 @@ public class AuthLogoutService : IAuthLogoutService
         if (!response.IsSuccessStatusCode)
         {
             var err = await response.Content.ReadAsStringAsync(ct);
-            return Result.Failure(Error.Failure("OAuth.LogoutFailed", $"Logout failed: {err}"));
+            throw new InvalidOperationException($"Logout failed: {err}");
         }
-
-        return Result.Success();
     }
 }

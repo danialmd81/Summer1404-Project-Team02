@@ -18,11 +18,15 @@ public sealed class CallbackCommandHandler : IRequestHandler<LoginCallbackComman
 
     public async Task<Result<TokenResponse>> Handle(LoginCallbackCommand request, CancellationToken cancellationToken)
     {
-        var result = await _exchanger.ExchangeCodeForTokensAsync(request.Code, request.RedirectPath ?? string.Empty, cancellationToken);
+        try
+        {
+            var tokenResponse = await _exchanger.ExchangeCodeForTokensAsync(request.Code, request.RedirectPath ?? string.Empty, cancellationToken);
 
-        if (result.IsFailure)
-            return Result.Failure<TokenResponse>(result.Error);
-
-        return Result.Success(result.Value);
+            return Result.Success(tokenResponse);
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure<TokenResponse>(Error.Problem("TokenExchange.Exception", ex.Message));
+        }
     }
 }

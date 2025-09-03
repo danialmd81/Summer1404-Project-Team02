@@ -1,4 +1,5 @@
-﻿using ETL.Application.Auth;
+﻿using ETL.API.Infrastructure;
+using ETL.Application.Auth;
 using ETL.Application.Auth.DTOs;
 using ETL.Application.Common.Options;
 using MediatR;
@@ -43,7 +44,7 @@ public class AuthController : ControllerBase
         var result = await _mediator.Send(request);
 
         if (result.IsFailure)
-            return BadRequest(new { error = result.Error.Code, message = result.Error.Description });
+            return this.ToActionResult(result.Error);
 
         var tokens = result.Value;
 
@@ -88,7 +89,7 @@ public class AuthController : ControllerBase
             Response.Cookies.Delete("access_token");
             Response.Cookies.Delete("refresh_token");
 
-            return Unauthorized(new { error = result.Error.Code, message = result.Error.Description });
+            return this.ToActionResult(result.Error);
         }
 
         var tokens = result.Value!;
@@ -123,7 +124,7 @@ public class AuthController : ControllerBase
         var result = await _mediator.Send(new ChangePasswordCommand(request, User));
 
         if (result.IsFailure)
-            return BadRequest(new { error = result.Error.Code, message = result.Error.Description });
+            return this.ToActionResult(result.Error);
 
         return Ok(new { message = "Password changed successfully." });
     }
@@ -138,7 +139,7 @@ public class AuthController : ControllerBase
         var result = await _mediator.Send(new LogoutCommand(accessToken, refreshToken));
 
         if (result.IsFailure)
-            return BadRequest(new { error = result.Error.Code, message = result.Error.Description });
+            return this.ToActionResult(result.Error);
 
         Response.Cookies.Delete("access_token");
         Response.Cookies.Delete("refresh_token");

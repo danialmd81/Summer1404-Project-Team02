@@ -17,11 +17,14 @@ public sealed class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result
 
     public async Task<Result> Handle(LogoutCommand request, CancellationToken cancellationToken)
     {
-        var result = await _logoutService.LogoutAsync(request.AccessToken, request.RefreshToken, cancellationToken);
-
-        if (result.IsFailure)
-            return Result.Failure(result.Error);
-
-        return Result.Success();
+        try
+        {
+            await _logoutService.LogoutAsync(request.AccessToken, request.RefreshToken, cancellationToken);
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure(Error.Problem("AuthLogOut.Exception", ex.Message));
+        }
     }
 }

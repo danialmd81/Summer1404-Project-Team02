@@ -23,7 +23,7 @@ public sealed class ChangePasswordCommandHandler : IRequestHandler<ChangePasswor
     {
         var dto = request.Request;
         if (dto is null)
-            return Result.Failure(Error.Failure("Auth.InvalidRequest", "Request is missing"));
+            return Result.Failure(Error.Validation("Auth.InvalidRequest", "Request is missing"));
 
         if (dto.NewPassword != dto.ConfirmPassword)
             return Result.Failure(Error.Validation("Auth.PasswordMismatch", "New password and confirmation do not match"));
@@ -33,19 +33,20 @@ public sealed class ChangePasswordCommandHandler : IRequestHandler<ChangePasswor
         var username = user.Claims.FirstOrDefault(c => c.Type == "preferred_username")?.Value;
 
         if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(username))
-            return Result.Failure(Error.Failure("Auth.UserNotFound", "User identity not found"));
+            return Result.Failure(Error.NotFound("Auth.UserNotFound", "User identity not found"));
 
-        var valid = await _credentialValidator.ValidateCredentialsAsync(username, dto.CurrentPassword ?? string.Empty, cancellationToken);
+        var valid = await _credentialValidator.ValidateCredentialsAsync(username, dto.CurrentPassword, cancellationToken);
         if (!valid)
             return Result.Failure(Error.Validation("Auth.InvalidCurrentPassword", "The current password is incorrect"));
 
-        var result = await _restPasswordService.ResetPasswordAsync(userId, dto.NewPassword ?? string.Empty, cancellationToken);
-
-        if (result.IsFailure)
+        try
         {
-            return Result.Failure(result.Error);
+            await _restPasswordService.ResetPasswordAsync(userId, dto.NewPassword, cancellationToken);
+            return Result.Success();
         }
-
-        return Result.Success();
+        catch (Exception ex)
+        {
+            return Result.Failure(Error.Problem("AuthPasswordChange.Exception", $"Failed to change password: {ex.Message}"));
+        }
     }
 }

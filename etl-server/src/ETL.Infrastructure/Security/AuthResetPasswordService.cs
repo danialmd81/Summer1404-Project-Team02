@@ -1,7 +1,6 @@
 ﻿using System.Text;
 using System.Text.Json;
 using ETL.Application.Abstractions.Security;
-using ETL.Application.Common;
 using ETL.Application.Common.Options;
 using Microsoft.Extensions.Options;
 
@@ -19,7 +18,7 @@ public class AuthRestPasswordService : IAuthRestPasswordService
         _authOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 
-    public async Task<Result> ResetPasswordAsync(string userId, string newPassword, CancellationToken ct = default)
+    public async Task ResetPasswordAsync(string userId, string newPassword, CancellationToken ct = default)
     {
         var adminAccessToken = await _adminTokenService.GetAdminAccessTokenAsync(ct);
         if (string.IsNullOrEmpty(adminAccessToken))
@@ -42,9 +41,7 @@ public class AuthRestPasswordService : IAuthRestPasswordService
         if (!response.IsSuccessStatusCode)
         {
             var err = await response.Content.ReadAsStringAsync(ct);
-            return Result.Failure(Error.Failure("OAuth.ResetPasswordFailed", $"Reset password failed: {err}"));
+            throw new InvalidOperationException($"Reset password failed: {err}");
         }
-
-        return Result.Success();
     }
 }

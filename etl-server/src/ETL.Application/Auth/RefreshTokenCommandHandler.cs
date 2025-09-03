@@ -21,12 +21,15 @@ public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCom
         if (string.IsNullOrWhiteSpace(request.RefreshToken))
             return Result.Failure<TokenResponse>(Error.Validation("Auth.Refresh.MissingToken", "Refresh token is required."));
 
-        var refreshResult = await _tokenRefresher.RefreshAsync(request.RefreshToken, cancellationToken);
+        try
+        {
+            var tokensData = await _tokenRefresher.RefreshAsync(request.RefreshToken, cancellationToken);
+            return Result.Success(tokensData);
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure<TokenResponse>(Error.Problem("Auth.Refresh.Exception", ex.Message));
+        }
 
-        if (refreshResult.IsFailure)
-            return Result.Failure<TokenResponse>(refreshResult.Error);
-
-        var tokens = refreshResult.Value;
-        return Result.Success(tokens!);
     }
 }
