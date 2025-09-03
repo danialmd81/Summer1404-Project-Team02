@@ -1,5 +1,5 @@
 ﻿using ETL.Application.Abstractions.Security;
-using ETL.Application.Auth.Logout;
+using ETL.Application.Auth;
 using ETL.Application.Common;
 using FluentAssertions;
 using NSubstitute;

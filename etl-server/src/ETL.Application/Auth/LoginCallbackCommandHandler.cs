@@ -3,9 +3,11 @@ using ETL.Application.Common;
 using ETL.Application.Common.DTOs;
 using MediatR;
 
-namespace ETL.Application.Auth.LoginCallback;
+namespace ETL.Application.Auth;
 
-public class CallbackCommandHandler : IRequestHandler<LoginCallbackCommand, Result<TokenResponse>>
+public record LoginCallbackCommand(string Code, string? RedirectPath) : IRequest<Result<TokenResponse>>;
+
+public sealed class CallbackCommandHandler : IRequestHandler<LoginCallbackCommand, Result<TokenResponse>>
 {
     private readonly IAuthCodeForTokenExchanger _exchanger;
 

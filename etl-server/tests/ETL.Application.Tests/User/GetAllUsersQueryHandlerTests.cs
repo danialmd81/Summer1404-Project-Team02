@@ -1,7 +1,7 @@
 ﻿using ETL.Application.Abstractions.UserServices;
 using ETL.Application.Common;
 using ETL.Application.Common.DTOs;
-using ETL.Application.User.GetAll;
+using ETL.Application.User;
 using FluentAssertions;
 using NSubstitute;
 

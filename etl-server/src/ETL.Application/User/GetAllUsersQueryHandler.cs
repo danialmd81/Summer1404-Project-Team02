@@ -3,11 +3,11 @@ using ETL.Application.Common;
 using ETL.Application.Common.DTOs;
 using MediatR;
 
-namespace ETL.Application.User.GetAll;
+namespace ETL.Application.User;
 
 public record GetAllUsersQuery(int? First = null, int? Max = null) : IRequest<Result<IEnumerable<UserDto>>>;
 
-public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, Result<IEnumerable<UserDto>>>
+public sealed class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, Result<IEnumerable<UserDto>>>
 {
     private readonly IOAuthAllUserReader _allUserReader;
     private readonly IOAuthUserRoleGetter _roleGetter;
@@ -62,6 +62,6 @@ public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, Result<
             user.Role = roleResult.Value;
         }
 
-        return Result.Success<IEnumerable<UserDto>>(users.Where(u => u.Role is not null));
+        return Result.Success(users.Where(u => u.Role is not null));
     }
 }

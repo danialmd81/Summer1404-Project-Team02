@@ -3,11 +3,11 @@ using ETL.Application.Common;
 using ETL.Domain.Entities;
 using MediatR;
 
-namespace ETL.Application.DataSet.UploadCsv;
+namespace ETL.Application.DataSet;
 
 public record UploadCsvCommand(string TableName, Stream FileStream, string UserId) : IRequest<Result>;
 
-public class UploadCsvCommandHandler : IRequestHandler<UploadCsvCommand, Result>
+public sealed class UploadCsvCommandHandler : IRequestHandler<UploadCsvCommand, Result>
 {
     private readonly IUnitOfWork _uow;
 

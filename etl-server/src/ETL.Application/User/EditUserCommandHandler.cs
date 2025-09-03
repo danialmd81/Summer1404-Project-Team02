@@ -2,7 +2,7 @@
 using ETL.Application.Common;
 using MediatR;
 
-namespace ETL.Application.User.Edit;
+namespace ETL.Application.User;
 
 public record EditUserCommand(
     string UserId,
@@ -12,7 +12,7 @@ public record EditUserCommand(
     string? LastName
 ) : IRequest<Result>;
 
-public class EditUserCommandHandler : IRequestHandler<EditUserCommand, Result>
+public sealed class EditUserCommandHandler : IRequestHandler<EditUserCommand, Result>
 {
     private readonly IOAuthUserUpdater _userUpdater;
 

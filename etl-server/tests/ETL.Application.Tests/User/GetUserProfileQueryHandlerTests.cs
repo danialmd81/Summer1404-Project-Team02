@@ -1,5 +1,5 @@
 ﻿using System.Security.Claims;
-using ETL.Application.User.GetCurrent;
+using ETL.Application.User;
 using FluentAssertions;
 
 namespace ETL.Application.Tests.User;

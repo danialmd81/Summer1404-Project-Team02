@@ -3,11 +3,11 @@ using ETL.Application.Common;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace ETL.Application.User.Delete;
+namespace ETL.Application.User;
 
 public record DeleteUserCommand(string UserId) : IRequest<Result>;
 
-public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Result>
+public sealed class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Result>
 {
     private readonly IOAuthUserDeleter _userDeleter;
 

@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using ETL.Application.Abstractions.Security;
-using ETL.Application.Auth.ChangePassword;
+using ETL.Application.Auth;
 using ETL.Application.Auth.DTOs;
 using ETL.Application.Common;
 using FluentAssertions;

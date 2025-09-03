@@ -2,7 +2,7 @@
 using ETL.Application.Common;
 using MediatR;
 
-namespace ETL.Application.DataSet.DeleteColumn;
+namespace ETL.Application.DataSet;
 
 public record DeleteColumnCommand(string TableName, string ColumnName) : IRequest<Result>;
 
@@ -31,7 +31,7 @@ public sealed class DeleteColumnCommandHandler : IRequestHandler<DeleteColumnCom
             return Result.Failure(
                 Error.NotFound("ColumnDelete.Failed", $"Column '{request.ColumnName}' not found!"));
         }
-        
+
         _uow.Begin();
         try
         {

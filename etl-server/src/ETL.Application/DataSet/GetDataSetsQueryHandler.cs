@@ -3,11 +3,11 @@ using ETL.Application.Common;
 using ETL.Application.Common.DTOs;
 using MediatR;
 
-namespace ETL.Application.DataSet.GetAll;
+namespace ETL.Application.DataSet;
 
 public record GetDataSetsQuery() : IRequest<Result<IEnumerable<DataSetDto>>>;
 
-public class GetDataSetsQueryHandler : IRequestHandler<GetDataSetsQuery, Result<IEnumerable<DataSetDto>>>
+public sealed class GetDataSetsQueryHandler : IRequestHandler<GetDataSetsQuery, Result<IEnumerable<DataSetDto>>>
 {
     private readonly IUnitOfWork _uow;
 

@@ -2,7 +2,7 @@
 using ETL.Application.Common;
 using MediatR;
 
-namespace ETL.Application.DataSet.DeleteTable;
+namespace ETL.Application.DataSet;
 
 public record DeleteTableCommand(string TableName) : IRequest<Result>;
 
@@ -23,14 +23,14 @@ public sealed class DeleteTableCommandHandler : IRequestHandler<DeleteTableComma
             return Result.Failure(
                 Error.NotFound("TableRemove.Failed", $"Table '{request.TableName}' not  found!"));
         }
-        
+
         _uow.Begin();
 
         try
         {
             await _uow.StagingTables.DeleteTableAsync(request.TableName, cancellationToken);
             await _uow.DataSets.DeleteAsync(existingDataSet, cancellationToken);
-            
+
             _uow.Commit();
             return Result.Success();
         }

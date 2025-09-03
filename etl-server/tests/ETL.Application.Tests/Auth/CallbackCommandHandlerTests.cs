@@ -1,5 +1,5 @@
 ﻿using ETL.Application.Abstractions.Security;
-using ETL.Application.Auth.LoginCallback;
+using ETL.Application.Auth;
 using ETL.Application.Common;
 using ETL.Application.Common.DTOs;
 using FluentAssertions;

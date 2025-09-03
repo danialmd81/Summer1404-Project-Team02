@@ -2,7 +2,7 @@
 using ETL.Application.Common;
 using MediatR;
 
-namespace ETL.Application.User.Create;
+namespace ETL.Application.User;
 
 public record CreateUserCommand(
     string Username,
@@ -13,7 +13,7 @@ public record CreateUserCommand(
     string? Role
 ) : IRequest<Result<string>>;
 
-public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Result<string>>
+public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Result<string>>
 {
     private readonly IOAuthUserCreator _userCreator;
     private readonly IOAuthRoleAssigner _roleAssigner;

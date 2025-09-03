@@ -2,7 +2,7 @@
 using ETL.Application.Common;
 using MediatR;
 
-namespace ETL.Application.DataSet.RenameColumn;
+namespace ETL.Application.DataSet;
 
 public record RenameColumnCommand(string TableName, string OldColumnName, string NewColumnName) : IRequest<Result>;
 
@@ -24,7 +24,7 @@ public sealed class RenameColumnCommandHandler : IRequestHandler<RenameColumnCom
                 Error.NotFound("ColumnRename.Failed", $"Table '{request.TableName}' not  found!"));
         }
 
-        var oldColumnExist = await 
+        var oldColumnExist = await
             _uow.StagingTables.ColumnExistsAsync(request.TableName, request.OldColumnName, cancellationToken);
         if (!oldColumnExist)
         {
@@ -39,7 +39,7 @@ public sealed class RenameColumnCommandHandler : IRequestHandler<RenameColumnCom
             return Result.Failure(Error.Conflict("ColumnRename.Failed",
                 $"Column '{request.NewColumnName}' already exists."));
         }
-        
+
         _uow.Begin();
         try
         {

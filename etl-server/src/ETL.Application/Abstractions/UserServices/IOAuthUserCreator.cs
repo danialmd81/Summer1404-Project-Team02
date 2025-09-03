@@ -1,5 +1,5 @@
 ﻿using ETL.Application.Common;
-using ETL.Application.User.Create;
+using ETL.Application.User;
 
 namespace ETL.Application.Abstractions.UserServices;
 

@@ -1,11 +1,8 @@
 ﻿using System.Security.Claims;
 using ETL.API.Infrastructure;
 using ETL.Application.Common.Constants;
-using ETL.Application.DataSet.DeleteColumn;
-using ETL.Application.DataSet.DeleteTable;
+using ETL.Application.DataSet;
 using ETL.Application.DataSet.GetAll;
-using ETL.Application.DataSet.RenameColumn;
-using ETL.Application.DataSet.RenameTable;
 using ETL.Application.DataSet.UploadCsv;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;

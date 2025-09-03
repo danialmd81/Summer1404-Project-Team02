@@ -1,6 +1,6 @@
 ﻿using ETL.Application.Abstractions.UserServices;
 using ETL.Application.Common;
-using ETL.Application.User.Create;
+using ETL.Application.User;
 using ETL.Infrastructure.OAuth.Abstractions;
 using Microsoft.Extensions.Configuration;
 

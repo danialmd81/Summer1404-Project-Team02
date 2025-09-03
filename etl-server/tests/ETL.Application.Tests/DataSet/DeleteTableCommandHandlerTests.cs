@@ -1,7 +1,7 @@
 ﻿using ETL.Application.Abstractions.Data;
 using ETL.Application.Abstractions.Repositories;
 using ETL.Application.Common;
-using ETL.Application.DataSet.DeleteTable;
+using ETL.Application.DataSet;
 using ETL.Domain.Entities;
 using FluentAssertions;
 using NSubstitute;

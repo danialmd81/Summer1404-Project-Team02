@@ -3,9 +3,11 @@ using ETL.Application.Common;
 using ETL.Application.Common.DTOs;
 using MediatR;
 
-namespace ETL.Application.Auth.Refresh;
+namespace ETL.Application.Auth;
 
-public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, Result<TokenResponse>>
+public record RefreshTokenCommand(string RefreshToken) : IRequest<Result<TokenResponse>>;
+
+public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, Result<TokenResponse>>
 {
     private readonly ITokenRefresher _tokenRefresher;
 

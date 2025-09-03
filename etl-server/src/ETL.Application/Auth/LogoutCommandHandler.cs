@@ -2,9 +2,11 @@
 using ETL.Application.Common;
 using MediatR;
 
-namespace ETL.Application.Auth.Logout;
+namespace ETL.Application.Auth;
 
-public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>
+public record LogoutCommand(string? AccessToken, string? RefreshToken) : IRequest<Result>;
+
+public sealed class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>
 {
     private readonly IAuthLogoutService _logoutService;
 

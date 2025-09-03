@@ -2,11 +2,11 @@
 using ETL.Application.Common.DTOs;
 using MediatR;
 
-namespace ETL.Application.User.GetCurrent;
+namespace ETL.Application.User;
 
 public record GetUserProfileQuery(ClaimsPrincipal User) : IRequest<UserDto>;
 
-public class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQuery, UserDto>
+public sealed class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQuery, UserDto>
 {
     public Task<UserDto> Handle(GetUserProfileQuery request, CancellationToken cancellationToken)
     {

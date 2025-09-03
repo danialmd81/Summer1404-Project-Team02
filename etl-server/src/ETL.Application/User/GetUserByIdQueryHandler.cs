@@ -3,11 +3,11 @@ using ETL.Application.Common;
 using ETL.Application.Common.DTOs;
 using MediatR;
 
-namespace ETL.Application.User.GetById;
+namespace ETL.Application.User;
 
 public record GetUserByIdQuery(string UserId) : IRequest<Result<UserDto>>;
 
-public class GetUserByIdQueryHandler : IRequestHandler<GetUserByIdQuery, Result<UserDto>>
+public sealed class GetUserByIdQueryHandler : IRequestHandler<GetUserByIdQuery, Result<UserDto>>
 {
     private readonly IOAuthUserReader _userReader;
     private readonly IOAuthUserRoleGetter _roleGetter;

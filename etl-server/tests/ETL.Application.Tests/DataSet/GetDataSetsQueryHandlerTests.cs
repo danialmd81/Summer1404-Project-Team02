@@ -1,6 +1,6 @@
 ﻿using ETL.Application.Abstractions.Data;
 using ETL.Application.Abstractions.Repositories;
-using ETL.Application.DataSet.GetAll;
+using ETL.Application.DataSet;
 using ETL.Domain.Entities;
 using FluentAssertions;
 using NSubstitute;

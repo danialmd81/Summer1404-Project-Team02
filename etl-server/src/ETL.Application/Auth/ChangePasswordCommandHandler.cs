@@ -1,11 +1,14 @@
 ﻿using System.Security.Claims;
 using ETL.Application.Abstractions.Security;
+using ETL.Application.Auth.DTOs;
 using ETL.Application.Common;
 using MediatR;
 
-namespace ETL.Application.Auth.ChangePassword;
+namespace ETL.Application.Auth;
 
-public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordCommand, Result>
+public record ChangePasswordCommand(ChangePasswordDto Request, ClaimsPrincipal User) : IRequest<Result>;
+
+public sealed class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordCommand, Result>
 {
     private readonly IAuthCredentialValidator _credentialValidator;
     private readonly IAuthRestPasswordService _restPasswordService;
