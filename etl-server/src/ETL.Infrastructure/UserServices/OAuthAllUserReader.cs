@@ -2,25 +2,26 @@
 using ETL.Application.Abstractions.UserServices;
 using ETL.Application.Common;
 using ETL.Application.Common.DTOs;
+using ETL.Application.Common.Options;
 using ETL.Infrastructure.OAuth.Abstractions;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace ETL.Infrastructure.UserServices;
 
 public class OAuthAllUserReader : IOAuthAllUserReader
 {
     private readonly IOAuthGetJsonArray _getArray;
-    private readonly IConfiguration _configuration;
+    private readonly AuthOptions _authOptions;
 
-    public OAuthAllUserReader(IOAuthGetJsonArray getArray, IConfiguration configuration)
+    public OAuthAllUserReader(IOAuthGetJsonArray getArray, IOptions<AuthOptions> options)
     {
         _getArray = getArray ?? throw new ArgumentNullException(nameof(getArray));
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _authOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 
     public async Task<Result<List<UserDto>>> GetAllAsync(int? first = null, int? max = null, CancellationToken ct = default)
     {
-        var realm = _configuration["Authentication:Realm"];
+        var realm = _authOptions.Realm;
         var path = $"/admin/realms/{Uri.EscapeDataString(realm)}/users";
         var query = new List<string>();
         if (first.HasValue) query.Add($"first={first.Value}");

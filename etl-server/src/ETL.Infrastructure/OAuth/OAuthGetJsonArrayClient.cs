@@ -1,15 +1,16 @@
 ﻿using System.Text.Json;
 using ETL.Application.Abstractions.Security;
 using ETL.Application.Common;
+using ETL.Application.Common.Options;
 using ETL.Infrastructure.OAuth.Abstractions;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace ETL.Infrastructure.OAuth;
 
 public class OAuthGetJsonArrayClient : OAuthHttpClientBase, IOAuthGetJsonArray
 {
-    public OAuthGetJsonArrayClient(IHttpClientFactory httpFactory, IConfiguration configuration, IAdminTokenService adminTokenService)
-        : base(httpFactory, configuration, adminTokenService)
+    public OAuthGetJsonArrayClient(IHttpClientFactory httpFactory, IAdminTokenService adminTokenService, IOptions<AuthOptions> options)
+        : base(httpFactory, adminTokenService, options)
     {
     }
 

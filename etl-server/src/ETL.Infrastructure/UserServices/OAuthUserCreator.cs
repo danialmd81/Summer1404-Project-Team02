@@ -1,25 +1,26 @@
 ﻿using ETL.Application.Abstractions.UserServices;
 using ETL.Application.Common;
+using ETL.Application.Common.Options;
 using ETL.Application.User;
 using ETL.Infrastructure.OAuth.Abstractions;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace ETL.Infrastructure.UserServices;
 
 public class OAuthUserCreator : IOAuthUserCreator
 {
     private readonly IOAuthPostJsonWithResponse _postWithResponse;
-    private readonly IConfiguration _configuration;
+    private readonly AuthOptions _authOptions;
 
-    public OAuthUserCreator(IOAuthPostJsonWithResponse postWithResponse, IConfiguration configuration)
+    public OAuthUserCreator(IOAuthPostJsonWithResponse postWithResponse, IOptions<AuthOptions> options)
     {
         _postWithResponse = postWithResponse ?? throw new ArgumentNullException(nameof(postWithResponse));
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _authOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 
     public async Task<Result<string>> CreateUserAsync(CreateUserCommand command, CancellationToken ct = default)
     {
-        var realm = _configuration["Authentication:Realm"];
+        var realm = _authOptions.Realm;
 
         var path = $"/admin/realms/{Uri.EscapeDataString(realm)}/users";
 

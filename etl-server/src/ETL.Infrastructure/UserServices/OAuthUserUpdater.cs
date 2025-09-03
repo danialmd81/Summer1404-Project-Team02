@@ -1,26 +1,27 @@
 ﻿using ETL.Application.Abstractions.UserServices;
 using ETL.Application.Common;
+using ETL.Application.Common.Options;
 using ETL.Application.User;
 using ETL.Infrastructure.OAuth.Abstractions;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace ETL.Infrastructure.UserServices;
 
 public class OAuthUserUpdater : IOAuthUserUpdater
 {
     private readonly IOAuthPutJson _putJson;
-    private readonly IConfiguration _configuration;
+    private readonly AuthOptions _authOptions;
 
-    public OAuthUserUpdater(IOAuthPutJson putJson, IConfiguration configuration)
+    public OAuthUserUpdater(IOAuthPutJson putJson, IOptions<AuthOptions> options)
     {
         _putJson = putJson ?? throw new ArgumentNullException(nameof(putJson));
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _authOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 
     public async Task<Result> UpdateUserAsync(EditUserCommand command, CancellationToken ct = default)
     {
 
-        var realm = _configuration["Authentication:Realm"];
+        var realm = _authOptions.Realm;
         var path = $"/admin/realms/{Uri.EscapeDataString(realm)}/users/{Uri.EscapeDataString(command.UserId)}";
 
         var payload = new Dictionary<string, object?>();

@@ -2,7 +2,8 @@
 using System.Text.Json;
 using ETL.Application.Abstractions.Security;
 using ETL.Application.Common;
-using Microsoft.Extensions.Configuration;
+using ETL.Application.Common.Options;
+using Microsoft.Extensions.Options;
 
 namespace ETL.Infrastructure.OAuth;
 
@@ -10,19 +11,19 @@ namespace ETL.Infrastructure.OAuth;
 public abstract class OAuthHttpClientBase
 {
     private readonly IHttpClientFactory _httpFactory;
-    private readonly IConfiguration _configuration;
     private readonly IAdminTokenService _adminTokenService;
+    private readonly AuthOptions _authOptions;
 
-    protected OAuthHttpClientBase(IHttpClientFactory httpFactory, IConfiguration configuration, IAdminTokenService adminTokenService)
+    protected OAuthHttpClientBase(IHttpClientFactory httpFactory, IAdminTokenService adminTokenService, IOptions<AuthOptions> options)
     {
         _httpFactory = httpFactory ?? throw new ArgumentNullException(nameof(httpFactory));
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _adminTokenService = adminTokenService ?? throw new ArgumentNullException(nameof(adminTokenService));
+        _authOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 
     protected string BuildUrl(string relativePath)
     {
-        var baseUrl = _configuration["Authentication:KeycloakBaseUrl"]?.TrimEnd('/');
+        var baseUrl = _authOptions.BaseUrl.TrimEnd('/');
 
         if (string.IsNullOrWhiteSpace(relativePath))
             throw new ArgumentException("relativePath is required", nameof(relativePath));

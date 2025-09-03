@@ -1,7 +1,8 @@
 ﻿using ETL.Application.Abstractions.UserServices;
 using ETL.Application.Common;
+using ETL.Application.Common.Options;
 using ETL.Infrastructure.OAuth.Abstractions;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace ETL.Infrastructure.UserServices;
 
@@ -9,13 +10,13 @@ public class OAuthRoleAssigner : IOAuthRoleAssigner
 {
     private readonly IOAuthGetJson _getJson;
     private readonly IOAuthPostJson _postJson;
-    private readonly IConfiguration _configuration;
+    private readonly AuthOptions _authOptions;
 
-    public OAuthRoleAssigner(IOAuthGetJson getJson, IOAuthPostJson postJson, IConfiguration configuration)
+    public OAuthRoleAssigner(IOAuthGetJson getJson, IOAuthPostJson postJson, IOptions<AuthOptions> options)
     {
         _getJson = getJson ?? throw new ArgumentNullException(nameof(getJson));
         _postJson = postJson ?? throw new ArgumentNullException(nameof(postJson));
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _authOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 
     public async Task<Result> AssignRoleAsync(string userId, string roleName, CancellationToken ct = default)
@@ -24,7 +25,7 @@ public class OAuthRoleAssigner : IOAuthRoleAssigner
         if (string.IsNullOrWhiteSpace(roleName))
             return Result.Success();
 
-        var realm = _configuration["Authentication:Realm"];
+        var realm = _authOptions.Realm;
 
         var getRolePath = $"/admin/realms/{Uri.EscapeDataString(realm)}/roles/{Uri.EscapeDataString(roleName)}";
 

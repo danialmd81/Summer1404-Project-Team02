@@ -2,21 +2,21 @@
 using System.Text.Json;
 using ETL.Application.Abstractions.Security;
 using ETL.Application.Common;
-using Microsoft.Extensions.Configuration;
+using ETL.Application.Common.Options;
+using Microsoft.Extensions.Options;
 
 namespace ETL.Infrastructure.Security;
 
 public class AuthRestPasswordService : IAuthRestPasswordService
 {
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly IConfiguration _configuration;
     private readonly IAdminTokenService _adminTokenService;
+    private readonly AuthOptions _authOptions;
 
-    public AuthRestPasswordService(IHttpClientFactory httpClientFactory, IConfiguration configuration, IAdminTokenService adminTokenService)
+    public AuthRestPasswordService(IHttpClientFactory httpClientFactory, IAdminTokenService adminTokenService, IOptions<AuthOptions> options)
     {
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-        _adminTokenService = adminTokenService ?? throw new ArgumentNullException(nameof(adminTokenService)); ;
+        _authOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 
     public async Task<Result> ResetPasswordAsync(string userId, string newPassword, CancellationToken ct = default)
@@ -26,10 +26,10 @@ public class AuthRestPasswordService : IAuthRestPasswordService
             throw new InvalidOperationException("Could not obtain admin credentials.");
 
         var httpClient = _httpClientFactory.CreateClient();
-        var keycloakBaseUrl = _configuration["Authentication:KeycloakBaseUrl"];
-        var realm = _configuration["Authentication:Realm"];
+        var OAuthBaseUrl = _authOptions.BaseUrl;
+        var realm = _authOptions.Realm;
 
-        var resetPasswordUrl = $"{keycloakBaseUrl}/admin/realms/{realm}/users/{userId}/reset-password";
+        var resetPasswordUrl = $"{OAuthBaseUrl}/admin/realms/{realm}/users/{userId}/reset-password";
 
         var resetPasswordPayload = new { type = "password", temporary = false, value = newPassword };
 

@@ -1,8 +1,10 @@
 ﻿using ETL.Application.Auth;
 using ETL.Application.Auth.DTOs;
+using ETL.Application.Common.Options;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace ETL.API.Controllers;
 
@@ -11,20 +13,20 @@ namespace ETL.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly IConfiguration _configuration;
+    private readonly AuthOptions _authOptions;
 
-    public AuthController(IMediator mediator, IConfiguration configuration)
+    public AuthController(IMediator mediator, IOptions<AuthOptions> options)
     {
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _authOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 
     [HttpGet("login")]
     public IActionResult Login([FromQuery] string? redirectPath)
     {
-        var authUrl = $"{_configuration["Authentication:Authority"]}/protocol/openid-connect/auth";
-        var clientId = _configuration["Authentication:ClientId"];
-        var redirectUri = $"{_configuration["Authentication:RedirectUri"]}/{redirectPath?.TrimStart('/')}";
+        var authUrl = $"{_authOptions.Authority}/protocol/openid-connect/auth";
+        var clientId = _authOptions.ClientId;
+        var redirectUri = $"{_authOptions.RedirectUri}/{redirectPath?.TrimStart('/')}";
 
         var finalUrl = $"{authUrl}?" +
                        $"client_id={Uri.EscapeDataString(clientId)}&" +

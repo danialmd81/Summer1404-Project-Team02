@@ -2,19 +2,20 @@
 using ETL.Application.Abstractions.Security;
 using ETL.Application.Common;
 using ETL.Application.Common.DTOs;
-using Microsoft.Extensions.Configuration;
+using ETL.Application.Common.Options;
+using Microsoft.Extensions.Options;
 
 namespace ETL.Infrastructure.Security;
 
 public class AuthTokenRefresher : IAuthTokenRefresher
 {
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly IConfiguration _configuration;
+    private readonly AuthOptions _authOptions;
 
-    public AuthTokenRefresher(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+    public AuthTokenRefresher(IHttpClientFactory httpClientFactory, IOptions<AuthOptions> options)
     {
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _authOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 
     public async Task<Result<TokenResponse>> RefreshAsync(string refreshToken, CancellationToken ct = default)
@@ -23,9 +24,9 @@ public class AuthTokenRefresher : IAuthTokenRefresher
             return Result.Failure<TokenResponse>(Error.Validation("Auth.Refresh.MissingToken", "Refresh token is required."));
 
         var httpClient = _httpClientFactory.CreateClient();
-        var tokenEndpoint = $"{_configuration["Authentication:Authority"]}/protocol/openid-connect/token";
-        var clientId = _configuration["Authentication:ClientId"];
-        var clientSecret = _configuration["Authentication:ClientSecret"];
+        var tokenEndpoint = $"{_authOptions.Authority}/protocol/openid-connect/token";
+        var clientId = _authOptions.ClientId;
+        var clientSecret = _authOptions.ClientSecret;
 
         var form = new Dictionary<string, string>
         {
