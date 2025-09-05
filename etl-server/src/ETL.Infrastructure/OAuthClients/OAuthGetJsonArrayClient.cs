@@ -1,6 +1,6 @@
-﻿using System.Text.Json;
+﻿using System.Net;
+using System.Text.Json;
 using ETL.Application.Abstractions.Security;
-using ETL.Application.Common;
 using ETL.Application.Common.Options;
 using ETL.Infrastructure.OAuth.Abstractions;
 using Microsoft.Extensions.Options;
@@ -14,13 +14,12 @@ public class OAuthGetJsonArrayClient : OAuthHttpClientBase, IOAuthGetJsonArray
     {
     }
 
-    public async Task<Result<List<JsonElement>>> GetJsonArrayAsync(string relativePath, CancellationToken ct = default)
+    public async Task<List<JsonElement>> GetJsonArrayAsync(string relativePath, CancellationToken ct = default)
     {
-        var tokenRes = await GetAdminTokenAsync(ct);
-        if (tokenRes.IsFailure) return Result.Failure<List<JsonElement>>(tokenRes.Error);
+        var token = await GetAdminTokenAsync(ct);
 
         var url = BuildUrl(relativePath);
-        var client = CreateClientWithToken(tokenRes.Value);
+        var client = CreateClientWithToken(token);
 
         using var req = new HttpRequestMessage(HttpMethod.Get, url);
         var resp = await client.SendAsync(req, ct);
@@ -28,10 +27,10 @@ public class OAuthGetJsonArrayClient : OAuthHttpClientBase, IOAuthGetJsonArray
         if (!resp.IsSuccessStatusCode)
         {
             var body = await resp.Content.ReadAsStringAsync(ct);
-            if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
-                return Result.Failure<List<JsonElement>>(Error.NotFound("OAuth.NotFound", $"Resource not found: {url}"));
+            if (resp.StatusCode == HttpStatusCode.NotFound)
+                throw new HttpRequestException($"Resource not found: {url}", null, resp.StatusCode);
 
-            return Result.Failure<List<JsonElement>>(Error.Problem("OAuth.RequestFailed", $"GET {url} failed: {resp.StatusCode} - {body}"));
+            throw new HttpRequestException($"GET {url} failed: {resp.StatusCode} - {body}", null, resp.StatusCode);
         }
 
         await using var stream = await resp.Content.ReadAsStreamAsync(ct);
@@ -44,6 +43,6 @@ public class OAuthGetJsonArrayClient : OAuthHttpClientBase, IOAuthGetJsonArray
                 list.Add(el.Clone());
         }
 
-        return Result.Success(list);
+        return list;
     }
 }

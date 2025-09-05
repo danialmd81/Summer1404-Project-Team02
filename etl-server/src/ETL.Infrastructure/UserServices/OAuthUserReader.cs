@@ -2,7 +2,7 @@
 using ETL.Application.Common;
 using ETL.Application.Common.DTOs;
 using ETL.Application.Common.Options;
-using ETL.Infrastructure.OAuth.Abstractions;
+using ETL.Infrastructure.OAuthClients.Abstractions;
 using Microsoft.Extensions.Options;
 
 namespace ETL.Infrastructure.UserServices;

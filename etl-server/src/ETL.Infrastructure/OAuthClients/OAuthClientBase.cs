@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using ETL.Application.Abstractions.Security;
-using ETL.Application.Common;
 using ETL.Application.Common.Options;
 using Microsoft.Extensions.Options;
 
@@ -37,32 +36,28 @@ public abstract class OAuthHttpClientBase
     protected HttpClient CreateClientWithToken(string token)
     {
         var client = _httpFactory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
         return client;
     }
 
-    protected async Task<Result<string>> GetAdminTokenAsync(CancellationToken ct = default)
+    protected async Task<string> GetAdminTokenAsync(CancellationToken ct = default)
     {
         var token = await _adminTokenService.GetAdminAccessTokenAsync(ct);
         if (string.IsNullOrEmpty(token))
-            return Result.Failure<string>(Error.Problem("OAuth.AdminTokenMissing", "Could not obtain admin token"));
-
-        return Result.Success(token);
+            throw new InvalidOperationException("Could not obtain admin token");
+        return token;
     }
-
-    protected async Task<Result<JsonElement>> ParseResponseJsonAsync(HttpResponseMessage resp, CancellationToken ct)
+    protected async Task<JsonElement> ParseResponseJsonAsync(HttpResponseMessage resp, CancellationToken ct)
     {
         if (!resp.IsSuccessStatusCode)
         {
             var body = await resp.Content.ReadAsStringAsync(ct);
-            if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
-                return Result.Failure<JsonElement>(Error.NotFound("OAuth.NotFound", $"Resource not found: {body}"));
-
-            return Result.Failure<JsonElement>(Error.Problem("OAuth.RequestFailed", $"Request failed: {resp.StatusCode} - {body}"));
+            throw new HttpRequestException($"Request failed: {resp.StatusCode} - {body}", null, resp.StatusCode);
         }
 
         await using var stream = await resp.Content.ReadAsStreamAsync(ct);
         using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
-        return Result.Success(doc.RootElement.Clone());
+        return doc.RootElement.Clone();
     }
 }

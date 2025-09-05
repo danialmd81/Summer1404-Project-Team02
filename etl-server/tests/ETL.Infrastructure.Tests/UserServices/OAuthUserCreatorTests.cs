@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using ETL.Application.Common;
 using ETL.Application.User.Create;
-using ETL.Infrastructure.OAuth.Abstractions;
+using ETL.Infrastructure.OAuthClients.Abstractions;
 using ETL.Infrastructure.UserServices;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;

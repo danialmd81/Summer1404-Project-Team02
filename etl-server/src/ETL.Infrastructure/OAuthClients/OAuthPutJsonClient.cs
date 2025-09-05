@@ -1,6 +1,6 @@
-﻿using System.Net.Http.Json;
+﻿using System.Net;
+using System.Net.Http.Json;
 using ETL.Application.Abstractions.Security;
-using ETL.Application.Common;
 using ETL.Application.Common.Options;
 using ETL.Infrastructure.OAuth.Abstractions;
 using Microsoft.Extensions.Options;
@@ -14,13 +14,12 @@ namespace ETL.Infrastructure.OAuth
         {
         }
 
-        public async Task<Result> PutJsonAsync(string relativePath, object content, CancellationToken ct = default)
+        public async Task PutJsonAsync(string relativePath, object content, CancellationToken ct = default)
         {
-            var tokenRes = await GetAdminTokenAsync(ct);
-            if (tokenRes.IsFailure) return Result.Failure(tokenRes.Error);
+            var token = await GetAdminTokenAsync(ct);
 
             var url = BuildUrl(relativePath);
-            var client = CreateClientWithToken(tokenRes.Value);
+            var client = CreateClientWithToken(token);
 
             using var req = new HttpRequestMessage(HttpMethod.Put, url)
             {
@@ -31,13 +30,11 @@ namespace ETL.Infrastructure.OAuth
             if (!resp.IsSuccessStatusCode)
             {
                 var body = await resp.Content.ReadAsStringAsync(ct);
-                if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
-                    return Result.Failure(Error.NotFound("OAuth.NotFound", $"Resource not found: {url}"));
+                if (resp.StatusCode == HttpStatusCode.NotFound)
+                    throw new HttpRequestException($"Resource not found: {url}", null, resp.StatusCode);
 
-                return Result.Failure(Error.Problem("OAuth.RequestFailed", $"PUT {url} failed: {resp.StatusCode} - {body}"));
+                throw new HttpRequestException($"PUT {url} failed: {resp.StatusCode} - {body}", null, resp.StatusCode);
             }
-
-            return Result.Success();
         }
     }
 }

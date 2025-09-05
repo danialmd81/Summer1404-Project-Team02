@@ -1,6 +1,5 @@
 ﻿using System.Net.Http.Json;
 using ETL.Application.Abstractions.Security;
-using ETL.Application.Common;
 using ETL.Application.Common.Options;
 using ETL.Infrastructure.OAuth.Abstractions;
 using Microsoft.Extensions.Options;
@@ -14,13 +13,12 @@ public class OAuthDeleteJsonClient : OAuthHttpClientBase, IOAuthDeleteJson
     {
     }
 
-    public async Task<Result> DeleteJsonAsync(string relativePath, object? content = null, CancellationToken ct = default)
+    public async Task DeleteJsonAsync(string relativePath, object? content = null, CancellationToken ct = default)
     {
-        var tokenRes = await GetAdminTokenAsync(ct);
-        if (tokenRes.IsFailure) return Result.Failure(tokenRes.Error);
+        var token = await GetAdminTokenAsync(ct);
 
         var url = BuildUrl(relativePath);
-        var client = CreateClientWithToken(tokenRes.Value);
+        var client = CreateClientWithToken(token);
 
         using var req = new HttpRequestMessage(HttpMethod.Delete, url)
         {
@@ -31,9 +29,7 @@ public class OAuthDeleteJsonClient : OAuthHttpClientBase, IOAuthDeleteJson
         if (!resp.IsSuccessStatusCode)
         {
             var body = await resp.Content.ReadAsStringAsync(ct);
-            return Result.Failure(Error.Problem("OAuth.RequestFailed", $"DELETE {url} failed: {resp.StatusCode} - {body}"));
+            throw new HttpRequestException($"DELETE {url} failed: {resp.StatusCode} - {body}", null, resp.StatusCode);
         }
-
-        return Result.Success();
     }
 }

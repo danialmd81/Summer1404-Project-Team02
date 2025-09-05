@@ -1,6 +1,5 @@
 ﻿using System.Text.Json;
 using ETL.Application.Abstractions.UserServices;
-using ETL.Application.Common;
 using ETL.Application.Common.DTOs;
 using ETL.Application.Common.Options;
 using ETL.Infrastructure.OAuth.Abstractions;
@@ -19,7 +18,7 @@ public class OAuthAllUserReader : IOAuthAllUserReader
         _authOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 
-    public async Task<Result<List<UserDto>>> GetAllAsync(int? first = null, int? max = null, CancellationToken ct = default)
+    public async Task<List<UserDto>> GetAllAsync(int? first = null, int? max = null, CancellationToken ct = default)
     {
         var realm = _authOptions.Realm;
         var path = $"/admin/realms/{Uri.EscapeDataString(realm)}/users";
@@ -28,11 +27,8 @@ public class OAuthAllUserReader : IOAuthAllUserReader
         if (max.HasValue) query.Add($"max={max.Value}");
         if (query.Count > 0) path = $"{path}?{string.Join('&', query)}";
 
-        var getRes = await _getArray.GetJsonArrayAsync(path, ct);
-        if (getRes.IsFailure)
-            return Result.Failure<List<UserDto>>(getRes.Error);
-
-        var list = getRes.Value ?? new List<JsonElement>();
+        // NOTE: underlying IOAuthGetJsonArray now returns List<JsonElement> or throws
+        var list = await _getArray.GetJsonArrayAsync(path, ct) ?? new List<JsonElement>();
 
         var users = new List<UserDto>(list.Count);
         foreach (var el in list)
@@ -49,6 +45,6 @@ public class OAuthAllUserReader : IOAuthAllUserReader
             users.Add(dto);
         }
 
-        return Result.Success(users);
+        return users;
     }
 }

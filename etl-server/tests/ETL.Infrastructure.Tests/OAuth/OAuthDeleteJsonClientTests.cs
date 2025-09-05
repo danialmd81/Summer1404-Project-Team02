@@ -1,6 +1,6 @@
 ﻿using System.Net;
 using ETL.Application.Abstractions.Security;
-using ETL.Infrastructure.OAuth;
+using ETL.Infrastructure.OAuthClients;
 using ETL.Infrastructure.Tests.HttpClientFixture;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;

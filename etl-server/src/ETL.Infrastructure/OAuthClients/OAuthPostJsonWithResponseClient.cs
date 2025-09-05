@@ -1,6 +1,5 @@
 ﻿using System.Net.Http.Json;
 using ETL.Application.Abstractions.Security;
-using ETL.Application.Common;
 using ETL.Application.Common.Options;
 using ETL.Infrastructure.OAuth.Abstractions;
 using Microsoft.Extensions.Options;
@@ -14,29 +13,26 @@ public class OAuthPostJsonWithResponseClient : OAuthHttpClientBase, IOAuthPostJs
     {
     }
 
-    public async Task<Result<HttpResponseMessage>> PostJsonForResponseAsync(string relativePath, object content, CancellationToken ct = default)
+    public async Task<HttpResponseMessage> PostJsonForResponseAsync(string relativePath, object content, CancellationToken ct = default)
     {
-        var tokenRes = await GetAdminTokenAsync(ct);
-        if (tokenRes.IsFailure) return Result.Failure<HttpResponseMessage>(tokenRes.Error);
+        var token = await GetAdminTokenAsync(ct);
 
         var url = BuildUrl(relativePath);
-        var client = CreateClientWithToken(tokenRes.Value);
+        var client = CreateClientWithToken(token);
 
         var req = new HttpRequestMessage(HttpMethod.Post, url)
         {
             Content = JsonContent.Create(content)
         };
 
-        HttpResponseMessage resp;
         try
         {
-            resp = await client.SendAsync(req, ct).ConfigureAwait(false);
+            var resp = await client.SendAsync(req, ct).ConfigureAwait(false);
+            return resp;
         }
         catch (Exception ex)
         {
-            return Result.Failure<HttpResponseMessage>(Error.Problem("OAuth.HttpError", $"HTTP request failed: {ex.Message}"));
+            throw new HttpRequestException($"HTTP request failed: {ex.Message}", ex);
         }
-
-        return Result.Success(resp);
     }
 }

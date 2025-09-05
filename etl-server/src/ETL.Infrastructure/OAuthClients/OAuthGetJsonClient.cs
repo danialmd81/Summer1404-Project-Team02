@@ -1,11 +1,10 @@
 ﻿using System.Text.Json;
 using ETL.Application.Abstractions.Security;
-using ETL.Application.Common;
 using ETL.Application.Common.Options;
-using ETL.Infrastructure.OAuth.Abstractions;
+using ETL.Infrastructure.OAuthClients.Abstractions;
 using Microsoft.Extensions.Options;
 
-namespace ETL.Infrastructure.OAuth;
+namespace ETL.Infrastructure.OAuthClients;
 
 public class OAuthGetJsonClient : OAuthHttpClientBase, IOAuthGetJson
 {
@@ -14,13 +13,12 @@ public class OAuthGetJsonClient : OAuthHttpClientBase, IOAuthGetJson
     {
     }
 
-    public async Task<Result<JsonElement>> GetJsonAsync(string relativePath, CancellationToken ct = default)
+    public async Task<JsonElement> GetJsonAsync(string relativePath, CancellationToken ct = default)
     {
-        var tokenRes = await GetAdminTokenAsync(ct);
-        if (tokenRes.IsFailure) return Result.Failure<JsonElement>(tokenRes.Error);
+        var token = await GetAdminTokenAsync(ct);
 
         var url = BuildUrl(relativePath);
-        var client = CreateClientWithToken(tokenRes.Value);
+        var client = CreateClientWithToken(token);
 
         using var req = new HttpRequestMessage(HttpMethod.Get, url);
         var resp = await client.SendAsync(req, ct);
