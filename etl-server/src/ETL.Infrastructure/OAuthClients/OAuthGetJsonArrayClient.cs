@@ -2,10 +2,10 @@
 using System.Text.Json;
 using ETL.Application.Abstractions.Security;
 using ETL.Application.Common.Options;
-using ETL.Infrastructure.OAuth.Abstractions;
+using ETL.Infrastructure.OAuthClients.Abstractions;
 using Microsoft.Extensions.Options;
 
-namespace ETL.Infrastructure.OAuth;
+namespace ETL.Infrastructure.OAuthClients;
 
 public class OAuthGetJsonArrayClient : OAuthHttpClientBase, IOAuthGetJsonArray
 {

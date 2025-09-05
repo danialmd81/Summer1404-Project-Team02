@@ -4,7 +4,7 @@ using ETL.Application.Abstractions.Security;
 using ETL.Application.Common.Options;
 using Microsoft.Extensions.Options;
 
-namespace ETL.Infrastructure.OAuth;
+namespace ETL.Infrastructure.OAuthClients;
 
 [ExcludeFromCodeCoverage]
 public abstract class OAuthHttpClientBase

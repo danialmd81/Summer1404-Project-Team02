@@ -1,4 +1,4 @@
-﻿namespace ETL.Infrastructure.OAuth.Abstractions;
+﻿namespace ETL.Infrastructure.OAuthClients.Abstractions;
 
 public interface IOAuthPostJsonWithResponse
 {
