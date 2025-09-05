@@ -46,7 +46,7 @@ public sealed class ChangePasswordCommandHandler : IRequestHandler<ChangePasswor
         }
         catch (Exception ex)
         {
-            return Result.Failure(Error.Problem("AuthPasswordChange.Exception", $"Failed to change password: {ex.Message}"));
+            return Result.Failure(Error.Problem("Auth.PasswordChange.Failed", $"Failed to change password: {ex.Message}"));
         }
     }
 }

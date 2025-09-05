@@ -1,7 +1,6 @@
 ﻿using ETL.Application.Abstractions.UserServices;
-using ETL.Application.Common;
 using ETL.Application.Common.Options;
-using ETL.Application.User;
+using ETL.Application.User.Create;
 using ETL.Infrastructure.OAuthClients.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -18,10 +17,9 @@ public class OAuthUserCreator : IOAuthUserCreator
         _authOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 
-    public async Task<Result<string>> CreateUserAsync(CreateUserCommand command, CancellationToken ct = default)
+    public async Task<string> CreateUserAsync(CreateUserCommand command, CancellationToken ct = default)
     {
         var realm = _authOptions.Realm;
-
         var path = $"/admin/realms/{Uri.EscapeDataString(realm)}/users";
 
         var newUserPayload = new
@@ -37,35 +35,21 @@ public class OAuthUserCreator : IOAuthUserCreator
             }
         };
 
-        var respRes = await _postWithResponse.PostJsonForResponseAsync(path, newUserPayload, ct);
-        if (respRes.IsFailure)
-            return Result.Failure<string>(respRes.Error);
-
-        using var resp = respRes.Value;
+        var resp = await _postWithResponse.PostJsonForResponseAsync(path, newUserPayload, ct);
 
         if (!resp.IsSuccessStatusCode)
         {
             var body = await resp.Content.ReadAsStringAsync(ct);
-            return Result.Failure<string>(Error.Problem("OAuth.CreateUserFailed", $"Create user failed: {resp.StatusCode} - {body}"));
+            throw new HttpRequestException($"Create user failed: {resp.StatusCode} - {body}", null, resp.StatusCode);
         }
 
-        var location = resp.Headers.Location;
-        if (location == null)
-        {
-            return Result.Failure<string>(Error.Problem("OAuth.NoLocationHeader", "Provider did not return Location header for created user."));
-        }
-
+        var location = resp.Headers.Location ?? throw new InvalidOperationException("Provider did not return Location header for created user.");
         string newUserId;
-        try
-        {
-            var segments = location.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
-            newUserId = segments[^1];
-        }
-        catch
-        {
-            return Result.Failure<string>(Error.Problem("OAuth.ParseUserIdFailed", "Failed to parse created user id from Location header."));
-        }
+        var segments = location.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        newUserId = segments.Last();
+        if (string.IsNullOrWhiteSpace(newUserId))
+            throw new InvalidOperationException("Failed to parse created user id from Location header.");
 
-        return Result.Success(newUserId);
+        return newUserId;
     }
 }

@@ -28,7 +28,7 @@ public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCom
         }
         catch (Exception ex)
         {
-            return Result.Failure<TokenResponse>(Error.Problem("Auth.Refresh.Exception", ex.Message));
+            return Result.Failure<TokenResponse>(Error.Problem("Auth.Refresh.Failed", ex.Message));
         }
 
     }

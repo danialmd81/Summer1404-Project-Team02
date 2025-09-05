@@ -1,8 +1,10 @@
-﻿using ETL.Application.Abstractions.UserServices;
+﻿using System.Net;
+using ETL.Application.Abstractions.UserServices;
 using ETL.Application.Common;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
-namespace ETL.Application.User;
+namespace ETL.Application.User.Edit;
 
 public record EditUserCommand(
     string UserId,
@@ -16,28 +18,22 @@ public sealed class EditUserCommandHandler : IRequestHandler<EditUserCommand, Re
 {
     private readonly IOAuthUserUpdater _userUpdater;
 
-    public EditUserCommandHandler(IOAuthUserUpdater userUpdater)
+    public EditUserCommandHandler(IOAuthUserUpdater userUpdater, ILogger<EditUserCommandHandler> logger)
     {
         _userUpdater = userUpdater ?? throw new ArgumentNullException(nameof(userUpdater));
     }
 
     public async Task<Result> Handle(EditUserCommand request, CancellationToken cancellationToken)
     {
-        var hasChanges = request.Username is not null
-                      || request.Email is not null
-                      || request.FirstName is not null
-                      || request.LastName is not null;
-
-        if (!hasChanges)
-            return Result.Failure(Error.Validation("User.Edit.NoChanges", "At least one updatable field must be provided."));
-
         try
         {
-            var res = await _userUpdater.UpdateUserAsync(
-                request,
-                cancellationToken);
+            await _userUpdater.UpdateUserAsync(request, cancellationToken);
 
-            return res;
+            return Result.Success();
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Result.Failure(Error.NotFound("OAuth.UserNotFound", ex.Message));
         }
         catch (Exception ex)
         {

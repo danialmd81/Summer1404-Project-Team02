@@ -24,7 +24,7 @@ public sealed class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result
         }
         catch (Exception ex)
         {
-            return Result.Failure(Error.Problem("AuthLogOut.Exception", ex.Message));
+            return Result.Failure(Error.Problem("Auth.LogOut.Failed", ex.Message));
         }
     }
 }

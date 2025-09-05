@@ -1,5 +1,5 @@
-﻿using ETL.Application.Abstractions.UserServices;
-using ETL.Application.Common;
+﻿using System.Text.Json;
+using ETL.Application.Abstractions.UserServices;
 using ETL.Application.Common.DTOs;
 using ETL.Application.Common.Options;
 using ETL.Infrastructure.OAuthClients.Abstractions;
@@ -18,17 +18,13 @@ public class OAuthUserReader : IOAuthUserReader
         _authOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 
-    public async Task<Result<UserDto>> GetByIdAsync(string userId, CancellationToken ct = default)
+    public async Task<UserDto> GetByIdAsync(string userId, CancellationToken ct = default)
     {
-        var realm = _authOptions.Realm;
 
+        var realm = _authOptions.Realm;
         var path = $"/admin/realms/{Uri.EscapeDataString(realm)}/users/{Uri.EscapeDataString(userId)}";
 
-        var getRes = await _getJson.GetJsonAsync(path, ct);
-        if (getRes.IsFailure)
-            return Result.Failure<UserDto>(getRes.Error);
-
-        var root = getRes.Value;
+        JsonElement root = await _getJson.GetJsonAsync(path, ct);
 
         var dto = new UserDto
         {
@@ -37,8 +33,9 @@ public class OAuthUserReader : IOAuthUserReader
             Email = root.TryGetProperty("email", out var pEmail) ? pEmail.GetString() : null,
             FirstName = root.TryGetProperty("firstName", out var pFirst) ? pFirst.GetString() : null,
             LastName = root.TryGetProperty("lastName", out var pLast) ? pLast.GetString() : null,
+            Role = null
         };
 
-        return Result.Success(dto);
+        return dto;
     }
 }

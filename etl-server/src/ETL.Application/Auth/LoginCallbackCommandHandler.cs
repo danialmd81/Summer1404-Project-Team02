@@ -26,7 +26,7 @@ public sealed class CallbackCommandHandler : IRequestHandler<LoginCallbackComman
         }
         catch (Exception ex)
         {
-            return Result.Failure<TokenResponse>(Error.Problem("TokenExchange.Exception", ex.Message));
+            return Result.Failure<TokenResponse>(Error.Problem("Token.Exchange.Failed", ex.Message));
         }
     }
 }

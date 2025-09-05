@@ -1,7 +1,6 @@
 ﻿using ETL.Application.Abstractions.UserServices;
-using ETL.Application.Common;
 using ETL.Application.Common.Options;
-using ETL.Application.User;
+using ETL.Application.User.Edit;
 using ETL.Infrastructure.OAuthClients.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -17,10 +16,8 @@ public class OAuthUserUpdater : IOAuthUserUpdater
         _putJson = putJson ?? throw new ArgumentNullException(nameof(putJson));
         _authOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
-
-    public async Task<Result> UpdateUserAsync(EditUserCommand command, CancellationToken ct = default)
+    public async Task UpdateUserAsync(EditUserCommand command, CancellationToken ct = default)
     {
-
         var realm = _authOptions.Realm;
         var path = $"/admin/realms/{Uri.EscapeDataString(realm)}/users/{Uri.EscapeDataString(command.UserId)}";
 
@@ -31,12 +28,8 @@ public class OAuthUserUpdater : IOAuthUserUpdater
         if (command.LastName is not null) payload["lastName"] = command.LastName;
 
         if (payload.Count == 0)
-            return Result.Success();
+            return;
 
-        var res = await _putJson.PutJsonAsync(path, payload, ct);
-        if (res.IsFailure)
-            return res;
-
-        return Result.Success();
+        await _putJson.PutJsonAsync(path, payload, ct);
     }
 }

@@ -1,6 +1,6 @@
 ﻿using ETL.Application.Abstractions.UserServices;
 using ETL.Application.Common;
-using ETL.Application.User;
+using ETL.Application.User.Delete;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;

@@ -1,5 +1,4 @@
 ﻿using ETL.Application.Abstractions.UserServices;
-using ETL.Application.Common;
 using ETL.Application.Common.Options;
 using ETL.Infrastructure.OAuthClients.Abstractions;
 using Microsoft.Extensions.Options;
@@ -18,31 +17,18 @@ public class OAuthRoleAssigner : IOAuthRoleAssigner
         _postJson = postJson ?? throw new ArgumentNullException(nameof(postJson));
         _authOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
-
-    public async Task<Result> AssignRoleAsync(string userId, string roleName, CancellationToken ct = default)
+    public async Task AssignRoleAsync(string userId, string roleName, CancellationToken ct = default)
     {
-
         if (string.IsNullOrWhiteSpace(roleName))
-            return Result.Success();
+            return;
 
         var realm = _authOptions.Realm;
 
         var getRolePath = $"/admin/realms/{Uri.EscapeDataString(realm)}/roles/{Uri.EscapeDataString(roleName)}";
-
-        var roleRes = await _getJson.GetJsonAsync(getRolePath, ct);
-        if (roleRes.IsFailure)
-        {
-            if (roleRes.Error.Type == ErrorType.NotFound)
-                return Result.Failure(Error.NotFound("OAuth.RoleNotFound", $"Role '{roleName}' not found."));
-
-            return Result.Failure(roleRes.Error);
-        }
+        var roleDef = await _getJson.GetJsonAsync(getRolePath, ct);
 
         var assignPath = $"/admin/realms/{Uri.EscapeDataString(realm)}/users/{Uri.EscapeDataString(userId)}/role-mappings/realm";
-        var assignRes = await _postJson.PostJsonAsync(assignPath, new[] { roleRes.Value }, ct);
-        if (assignRes.IsFailure)
-            return Result.Failure(assignRes.Error);
 
-        return Result.Success();
+        await _postJson.PostJsonAsync(assignPath, new[] { roleDef }, ct);
     }
 }

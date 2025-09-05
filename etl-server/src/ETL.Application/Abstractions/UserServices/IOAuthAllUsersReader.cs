@@ -1,8 +1,9 @@
-﻿using ETL.Application.Common;
-using ETL.Application.Common.DTOs;
+﻿using ETL.Application.Common.DTOs;
 
-namespace ETL.Application.Abstractions.UserServices;
-public interface IOAuthAllUserReader
+namespace ETL.Application.Abstractions.UserServices
 {
-    Task<Result<List<UserDto>>> GetAllAsync(int? first = null, int? max = null, CancellationToken ct = default);
+    public interface IOAuthAllUserReader
+    {
+        Task<List<UserDto>> GetAllAsync(int? first = null, int? max = null, CancellationToken ct = default);
+    }
 }

@@ -1,5 +1,5 @@
-﻿using ETL.Application.Abstractions.UserServices;
-using ETL.Application.Common;
+﻿using System.Text.Json;
+using ETL.Application.Abstractions.UserServices;
 using ETL.Application.Common.Options;
 using ETL.Infrastructure.OAuthClients.Abstractions;
 using Microsoft.Extensions.Options;
@@ -19,24 +19,15 @@ public class OAuthRoleRemover : IOAuthRoleRemover
         _authOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 
-    public async Task<Result> RemoveAllRealmRolesAsync(string userId, CancellationToken ct = default)
+    public async Task RemoveAllRealmRolesAsync(string userId, CancellationToken ct = default)
     {
         var realm = _authOptions.Realm;
-
         var rolesPath = $"/admin/realms/{Uri.EscapeDataString(realm)}/users/{Uri.EscapeDataString(userId)}/role-mappings/realm";
 
-        var getRes = await _getArray.GetJsonArrayAsync(rolesPath, ct);
-        if (getRes.IsFailure)
-            return Result.Failure(getRes.Error);
+        var roles = await _getArray.GetJsonArrayAsync(rolesPath, ct) ?? new List<JsonElement>();
 
-        var roles = getRes.Value;
-        if (roles == null || roles.Count == 0)
-            return Result.Success();
+        if (roles.Count == 0) return;
 
-        var delRes = await _delete.DeleteJsonAsync(rolesPath, roles, ct);
-        if (delRes.IsFailure)
-            return Result.Failure(delRes.Error);
-
-        return Result.Success();
+        await _delete.DeleteJsonAsync(rolesPath, roles, ct);
     }
 }

@@ -1,6 +1,11 @@
 ﻿using ETL.API.Infrastructure;
 using ETL.Application.Common.Constants;
 using ETL.Application.User;
+using ETL.Application.User.ChangeRole;
+using ETL.Application.User.Create;
+using ETL.Application.User.Delete;
+using ETL.Application.User.Edit;
+using ETL.Application.User.GetById;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
