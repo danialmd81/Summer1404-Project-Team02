@@ -11,23 +11,23 @@ public class GetDataSetsQueryHandlerTests
 {
     private readonly IUnitOfWork _uow;
     private readonly IDataSetRepository _dataSets;
-    private readonly GetDataSetsQueryHandler _sut;
+    private readonly GetAllDataSetsQueryHandler _sut;
 
     public GetDataSetsQueryHandlerTests()
     {
         _uow = Substitute.For<IUnitOfWork>();
         _dataSets = Substitute.For<IDataSetRepository>();
 
-        _uow.DataSets.Returns(_dataSets);
+        _uow.DataSetsRepo.Returns(_dataSets);
 
-        _sut = new GetDataSetsQueryHandler(_uow);
+        _sut = new GetAllDataSetsQueryHandler(_uow);
     }
 
     [Fact]
     public void Constructor_ShouldThrow_WhenUnitOfWorkIsNull()
     {
         // Act
-        Action act = () => new GetDataSetsQueryHandler(null!);
+        Action act = () => new GetAllDataSetsQueryHandler(null!);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
@@ -41,7 +41,7 @@ public class GetDataSetsQueryHandlerTests
         _dataSets.GetAllAsync(Arg.Any<CancellationToken>())
             .Returns(Enumerable.Empty<DataSetMetadata>());
 
-        var query = new GetDataSetsQuery();
+        var query = new GetAllDataSetsQuery();
 
         // Act
         var result = await _sut.Handle(query, CancellationToken.None);
@@ -64,7 +64,7 @@ public class GetDataSetsQueryHandlerTests
         _dataSets.GetAllAsync(Arg.Any<CancellationToken>())
             .Returns(dataSets);
 
-        var query = new GetDataSetsQuery();
+        var query = new GetAllDataSetsQuery();
 
         // Act
         var result = await _sut.Handle(query, CancellationToken.None);

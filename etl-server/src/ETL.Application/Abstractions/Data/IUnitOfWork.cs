@@ -1,13 +1,12 @@
-﻿using ETL.Application.Abstractions.Repositories;
+﻿using System.Data;
 
 namespace ETL.Application.Abstractions.Data;
 
-public interface IUnitOfWork : IDisposable
+public interface IUnitOfWork
 {
-    IDataSetRepository DataSets { get; }
-    IStagingTableRepository StagingTables { get; }
+    IDbTransaction BeginTransaction();
 
-    void Begin();
-    void Commit();
-    void Rollback();
+    void CommitTransaction(IDbTransaction transaction);
+
+    void RollbackTransaction(IDbTransaction transaction);
 }

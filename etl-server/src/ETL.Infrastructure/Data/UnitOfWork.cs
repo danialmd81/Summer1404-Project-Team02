@@ -1,78 +1,62 @@
 ﻿using System.Data;
+using System.Data.Common;
 using ETL.Application.Abstractions.Data;
-using ETL.Application.Abstractions.Repositories;
+using ETL.Infrastructure.Data.Abstractions;
 
 namespace ETL.Infrastructure.Data;
 
-public class UnitOfWork : IUnitOfWork, IDisposable
+public sealed class UnitOfWork : IUnitOfWork
 {
-    private readonly IDbConnection _connection;
-    private IDbTransaction? _transaction;
+    private readonly IDbConnectionFactory _connectionFactory;
 
-    public IDataSetRepository DataSets { get; }
-    public IStagingTableRepository StagingTables { get; }
-
-    public UnitOfWork(IDbConnection connection, IDataSetRepository dataSets, IStagingTableRepository dynamicTables)
+    public UnitOfWork(IDbConnectionFactory connectionFactory)
     {
-        _connection = connection ?? throw new ArgumentNullException(nameof(connection));
-        DataSets = dataSets ?? throw new ArgumentNullException(nameof(dataSets));
-        StagingTables = dynamicTables ?? throw new ArgumentNullException(nameof(dynamicTables));
+        _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
+    }
+    public IDbTransaction BeginTransaction()
+    {
+        var conn = _connectionFactory.CreateConnection();
+
+        if (conn.State != ConnectionState.Open)
+        {
+            if (conn is DbConnection dbConn)
+                dbConn.Open();
+            else
+                conn.Open();
+        }
+
+        return conn.BeginTransaction();
     }
 
-    public void Begin()
+    public void CommitTransaction(IDbTransaction transaction)
     {
-        if (_connection.State != ConnectionState.Open)
-            _connection.Open();
-
-        _transaction = _connection.BeginTransaction();
-
-        DataSets.SetTransaction(_transaction);
-        StagingTables.SetTransaction(_transaction);
-    }
-
-    public void Commit()
-    {
-        if (_transaction == null)
-            return;
+        if (transaction == null) return;
 
         try
         {
-            _transaction.Commit();
+            transaction.Commit();
         }
         finally
         {
-            DataSets.SetTransaction(null);
-            StagingTables.SetTransaction(null);
-
-            _transaction.Dispose();
-            _transaction = null;
+            var conn = transaction.Connection;
+            transaction?.Dispose();
+            conn?.Dispose();
         }
     }
 
-    public void Rollback()
+    public void RollbackTransaction(IDbTransaction transaction)
     {
-        if (_transaction == null)
-            return;
+        if (transaction == null) return;
 
         try
         {
-            _transaction.Rollback();
+            transaction.Rollback();
         }
         finally
         {
-            DataSets.SetTransaction(null);
-            StagingTables.SetTransaction(null);
-
-            _transaction.Dispose();
-            _transaction = null;
+            var conn = transaction.Connection;
+            transaction?.Dispose();
+            conn?.Dispose();
         }
-    }
-
-    public void Dispose()
-    {
-        _transaction?.Dispose();
-        _transaction = null;
-
-        _connection.Dispose();
     }
 }

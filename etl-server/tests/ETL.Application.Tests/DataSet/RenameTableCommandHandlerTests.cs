@@ -1,7 +1,7 @@
 ﻿using ETL.Application.Abstractions.Data;
 using ETL.Application.Abstractions.Repositories;
 using ETL.Application.Common;
-using ETL.Application.DataSet;
+using ETL.Application.DataSet.RenameTable;
 using ETL.Domain.Entities;
 using FluentAssertions;
 using NSubstitute;
@@ -21,8 +21,8 @@ public class RenameTableCommandHandlerTests
         _dataSets = Substitute.For<IDataSetRepository>();
         _stagingTables = Substitute.For<IStagingTableRepository>();
 
-        _uow.DataSets.Returns(_dataSets);
-        _uow.StagingTables.Returns(_stagingTables);
+        _uow.DataSetsRepo.Returns(_dataSets);
+        _uow.StagingTablesRepo.Returns(_stagingTables);
 
         _sut = new RenameTableCommandHandler(_uow);
     }

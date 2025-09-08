@@ -1,5 +1,4 @@
-﻿using System.Data;
-using ETL.Application.Abstractions.Data;
+﻿using ETL.Application.Abstractions.Data;
 using ETL.Application.Abstractions.Repositories;
 using ETL.Application.Abstractions.Security;
 using ETL.Application.Abstractions.UserServices;
@@ -8,12 +7,14 @@ using ETL.Infrastructure.Data.Abstractions;
 using ETL.Infrastructure.OAuthClients;
 using ETL.Infrastructure.OAuthClients.Abstractions;
 using ETL.Infrastructure.Repositories;
+using ETL.Infrastructure.Repositories.Abstractions;
+using ETL.Infrastructure.Repositories.DataSets;
+using ETL.Infrastructure.Repositories.StagingTables;
 using ETL.Infrastructure.Security;
 using ETL.Infrastructure.UserServices;
 using ETL.Infrastructure.UserServices.Abstractions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Npgsql;
 using SqlKata.Compilers;
 
 namespace ETL.Infrastructure;
@@ -63,17 +64,28 @@ public static class DependencyInjection
         services.AddSingleton<IAuthRestPasswordService, AuthRestPasswordService>();
         services.AddSingleton<IAuthLogoutService, AuthLogoutService>();
 
-        services.AddSingleton<IStagingTableRepository, StagingTableRepository>();
-        services.AddSingleton<IDataSetRepository, DataSetRepository>();
-        services.AddSingleton<Compiler, PostgresCompiler>();
-        services.AddSingleton<IDbExecutor, DapperDbExecutor>();
-        services.AddSingleton<IPostgresCopyAdapter, PostgresCopyAdapter>();
-        services.AddSingleton<IQueryCompiler, SqlKataCompilerAdapter>();
-        services.AddSingleton<IDbConnection>(sp =>
-        {
-            return new NpgsqlConnection(config.GetConnectionString("DefaultConnection"));
-        });
+        services.AddSingleton<IDbConnectionFactory>(_ => new NpgsqlConnectionFactory(config.GetConnectionString("DefaultConnection")));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddSingleton<Compiler, PostgresCompiler>();
+
+        services.AddSingleton<IGetAllDataSets, GetAllDataSetsOperation>();
+        services.AddSingleton<IGetDataSetById, GetDataSetByIdOperation>();
+        services.AddSingleton<IGetDataSetByTableName, GetDataSetByTableNameOperation>();
+        services.AddSingleton<IAddDataSet, AddDataSetOperation>();
+        services.AddSingleton<IUpdateDataSet, UpdateDataSetOperation>();
+        services.AddSingleton<IDeleteDataSet, DeleteDataSetOperation>();
+
+        services.AddSingleton<IStreamGetter, StreamGetter>();
+        services.AddSingleton<ICsvHeaderReader, CsvHeaderReader>();
+        services.AddSingleton<IIdentifierSanitizer, IdentifierSanitizer>();
+        services.AddSingleton<ITableCreator, TableCreator>();
+        services.AddSingleton<ICsvCopyImporter, CsvCopyImporter>();
+        services.AddSingleton<ICreateTableFromCsv, CreateTableFromCsvOperation>();
+        services.AddSingleton<IRenameStagingTable, RenameStagingTableOperation>();
+        services.AddSingleton<IRenameStagingColumn, RenameStagingColumnOperation>();
+        services.AddSingleton<IDeleteStagingTable, DeleteStagingTableOperation>();
+        services.AddSingleton<IDeleteStagingColumn, DeleteStagingColumnOperation>();
+        services.AddSingleton<IStagingColumnExists, StagingColumnExistsOperation>();
 
 
         return services;
