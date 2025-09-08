@@ -56,7 +56,6 @@ public static class DependencyInjection
         services.AddSingleton<IOAuthUserDeleter, OAuthUserDeleter>();
         services.AddSingleton<IOAuthRoleRemover, OAuthRoleRemover>();
         services.AddSingleton<IOAuthRoleAssigner, OAuthRoleAssigner>();
-        services.AddSingleton<IOAuthUserRoleChanger, OAuthUserRoleChanger>();
         services.AddSingleton<IAdminTokenService, AdminTokenService>();
         services.AddSingleton<IAuthCodeForTokenExchanger, AuthCodeForTokenExchanger>();
         services.AddSingleton<IAuthTokenRefresher, AuthTokenRefresher>();
@@ -64,17 +63,17 @@ public static class DependencyInjection
         services.AddSingleton<IAuthRestPasswordService, AuthRestPasswordService>();
         services.AddSingleton<IAuthLogoutService, AuthLogoutService>();
 
-        services.AddScoped<Compiler, PostgresCompiler>();
-        services.AddScoped<IDbExecutor, DapperDbExecutor>();
-        services.AddScoped<IPostgresCopyAdapter, PostgresCopyAdapter>();
-        services.AddScoped<IQueryCompiler, SqlKataCompilerAdapter>();
-        services.AddScoped<IDbConnection>(sp =>
+        services.AddSingleton<IStagingTableRepository, StagingTableRepository>();
+        services.AddSingleton<IDataSetRepository, DataSetRepository>();
+        services.AddSingleton<Compiler, PostgresCompiler>();
+        services.AddSingleton<IDbExecutor, DapperDbExecutor>();
+        services.AddSingleton<IPostgresCopyAdapter, PostgresCopyAdapter>();
+        services.AddSingleton<IQueryCompiler, SqlKataCompilerAdapter>();
+        services.AddSingleton<IDbConnection>(sp =>
         {
             return new NpgsqlConnection(config.GetConnectionString("DefaultConnection"));
         });
         services.AddScoped<IUnitOfWork, UnitOfWork>();
-        services.AddScoped<IStagingTableRepository, StagingTableRepository>();
-        services.AddScoped<IDataSetRepository, DataSetRepository>();
 
 
         return services;

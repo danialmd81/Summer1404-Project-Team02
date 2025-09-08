@@ -35,8 +35,8 @@ public sealed class StagingTableRepository : IStagingTableRepository
 
     public async Task CreateTableFromCsvAsync(string tableName, Stream csvStream, CancellationToken cancellationToken = default)
     {
-        if (tableName == null) throw new ArgumentNullException(nameof(tableName));
-        if (csvStream == null) throw new ArgumentNullException(nameof(csvStream));
+        ArgumentNullException.ThrowIfNull(tableName);
+        ArgumentNullException.ThrowIfNull(csvStream);
 
         Stream workingStream;
         if (csvStream.CanSeek)
@@ -77,7 +77,7 @@ public sealed class StagingTableRepository : IStagingTableRepository
                 if (read == 0) break;
                 await writer.WriteAsync(buffer, 0, read);
             }
-            await writer.FlushAsync();
+            await writer.FlushAsync(cancellationToken);
         }
 
         if (!csvStream.CanSeek)
