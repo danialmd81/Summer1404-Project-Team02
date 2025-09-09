@@ -28,9 +28,6 @@ public sealed class CreateTableFromCsvOperation : ICreateTableFromCsv
 
     public async Task ExecuteAsync(string tableName, Stream csvStream, IDbTransaction? tx = null, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(tableName)) throw new ArgumentNullException(nameof(tableName));
-        ArgumentNullException.ThrowIfNull(csvStream);
-
         var (seekable, owns) = await _streamProvider.GetSeekableStreamAsync(csvStream, cancellationToken);
 
         try

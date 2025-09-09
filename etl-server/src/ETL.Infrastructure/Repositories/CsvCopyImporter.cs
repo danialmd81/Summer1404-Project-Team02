@@ -17,7 +17,6 @@ public sealed class CsvCopyImporter : ICsvCopyImporter
 
     public async Task ImportAsync(string quotedTableName, IEnumerable<string> quotedColumnNames, Stream csvSeekableStream, IDbTransaction? tx = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(csvSeekableStream);
         if (!csvSeekableStream.CanSeek) throw new ArgumentException("csvSeekableStream must be seekable", nameof(csvSeekableStream));
 
         var copyColumns = string.Join(", ", quotedColumnNames);

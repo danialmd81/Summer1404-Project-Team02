@@ -8,7 +8,6 @@ public sealed class CsvHeaderReader : ICsvHeaderReader
 {
     public async Task<string[]> ReadHeaderAsync(Stream seekableStream, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(seekableStream);
         if (!seekableStream.CanSeek) throw new ArgumentException("Stream must be seekable.", nameof(seekableStream));
 
         using var sr = new StreamReader(seekableStream, leaveOpen: true);
