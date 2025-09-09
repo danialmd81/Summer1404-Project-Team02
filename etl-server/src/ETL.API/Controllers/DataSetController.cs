@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using System.Text.Json;
 using ETL.API.Infrastructure;
 using ETL.Application.Common.Constants;
 using ETL.Application.DataSet;
@@ -46,6 +47,16 @@ public class DataSetsController : ControllerBase
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetAllDataSetsQuery(), cancellationToken);
+        return Ok(result.Value);
+    }
+    
+    [HttpGet("get-table")]
+    [Authorize(Policy = Policy.CanReadAllDataSets)]
+    public async Task<IActionResult> GetTable([FromQuery] GetTableByNameQuery request, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request, cancellationToken);
+        if (result.IsFailure)
+            return this.ToActionResult(result.Error);
         return Ok(result.Value);
     }
 

@@ -31,3 +31,8 @@ public interface IStagingColumnExists
 {
     Task<bool> ExecuteAsync(string tableName, string columnName, CancellationToken cancellationToken = default);
 }
+
+public interface IGetStagingTableByName
+{
+    Task<string> ExecuteAsync(string tableName, CancellationToken cancellationToken = default);
+}

@@ -86,6 +86,7 @@ public static class DependencyInjection
         services.AddSingleton<IDeleteStagingTable, DeleteStagingTableOperation>();
         services.AddSingleton<IDeleteStagingColumn, DeleteStagingColumnOperation>();
         services.AddSingleton<IStagingColumnExists, StagingColumnExistsOperation>();
+        services.AddSingleton<IGetStagingTableByName, GetStagingTableByName>();
 
 
         return services;
