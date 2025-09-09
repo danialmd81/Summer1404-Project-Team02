@@ -29,14 +29,14 @@ public sealed class RenameTableCommandHandler : IRequestHandler<RenameTableComma
 
     public async Task<Result> Handle(RenameTableCommand request, CancellationToken cancellationToken)
     {
-        var existingDataSet = await _getByTableName.ExecuteAsync(request.OldTableName, cancellationToken).ConfigureAwait(false);
+        var existingDataSet = await _getByTableName.ExecuteAsync(request.OldTableName, cancellationToken);
         if (existingDataSet == null)
         {
             return Result.Failure(
                 Error.NotFound("TableRename.Failed", $"Table '{request.OldTableName}' not found!"));
         }
 
-        var newDataSet = await _getByTableName.ExecuteAsync(request.NewTableName, cancellationToken).ConfigureAwait(false);
+        var newDataSet = await _getByTableName.ExecuteAsync(request.NewTableName, cancellationToken);
         if (newDataSet != null)
         {
             return Result.Failure(Error.Conflict("TableRename.Failed",
@@ -48,10 +48,10 @@ public sealed class RenameTableCommandHandler : IRequestHandler<RenameTableComma
         {
             tx = _uow.BeginTransaction();
 
-            await _renameStagingTable.ExecuteAsync(request.OldTableName, request.NewTableName, tx, cancellationToken).ConfigureAwait(false);
+            await _renameStagingTable.ExecuteAsync(request.OldTableName, request.NewTableName, tx, cancellationToken);
 
             existingDataSet.Rename(request.NewTableName);
-            await _updateDataSet.ExecuteAsync(existingDataSet, tx, cancellationToken).ConfigureAwait(false);
+            await _updateDataSet.ExecuteAsync(existingDataSet, tx, cancellationToken);
 
             _uow.CommitTransaction(tx);
             tx = null;

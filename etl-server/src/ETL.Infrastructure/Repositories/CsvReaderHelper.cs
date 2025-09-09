@@ -14,7 +14,7 @@ public sealed class CsvHeaderReader : ICsvHeaderReader
         using var sr = new StreamReader(seekableStream, leaveOpen: true);
         using var csv = new CsvReader(sr, CultureInfo.InvariantCulture);
 
-        if (!await csv.ReadAsync().ConfigureAwait(false))
+        if (!await csv.ReadAsync())
             throw new InvalidOperationException("CSV is empty");
 
         csv.ReadHeader();

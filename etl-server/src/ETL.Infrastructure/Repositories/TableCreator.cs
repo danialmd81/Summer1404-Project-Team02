@@ -22,16 +22,16 @@ public sealed class TableCreator : ITableCreator
 
         if (tx != null)
         {
-            await tx.Connection.ExecuteAsync(createSql, null, tx).ConfigureAwait(false);
+            await tx.Connection.ExecuteAsync(createSql, null, tx);
             return;
         }
 
         using var conn = _connectionFactory.CreateConnection();
         if (conn is DbConnection dbConn)
-            await dbConn.OpenAsync(cancellationToken).ConfigureAwait(false);
+            await dbConn.OpenAsync(cancellationToken);
         else
             conn.Open();
 
-        await conn.ExecuteAsync(createSql).ConfigureAwait(false);
+        await conn.ExecuteAsync(createSql);
     }
 }

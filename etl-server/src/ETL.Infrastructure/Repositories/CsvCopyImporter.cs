@@ -31,7 +31,7 @@ public sealed class CsvCopyImporter : ICsvCopyImporter
             {
                 localConnToDispose = _connectionFactory.CreateConnection();
                 if (localConnToDispose is DbConnection dbConn)
-                    await dbConn.OpenAsync(cancellationToken).ConfigureAwait(false);
+                    await dbConn.OpenAsync(cancellationToken);
                 else
                     localConnToDispose.Open();
 
@@ -43,17 +43,17 @@ public sealed class CsvCopyImporter : ICsvCopyImporter
 
             csvSeekableStream.Position = 0;
             using var reader = new StreamReader(csvSeekableStream, leaveOpen: true);
-            using var writer = await npgsql.BeginTextImportAsync(copySql).ConfigureAwait(false);
+            using var writer = await npgsql.BeginTextImportAsync(copySql);
 
             var buffer = new char[81920];
             while (!cancellationToken.IsCancellationRequested)
             {
-                var read = await reader.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+                var read = await reader.ReadAsync(buffer, 0, buffer.Length);
                 if (read == 0) break;
-                await writer.WriteAsync(buffer, 0, read).ConfigureAwait(false);
+                await writer.WriteAsync(buffer, 0, read);
             }
 
-            await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
+            await writer.FlushAsync(cancellationToken);
         }
         finally
         {

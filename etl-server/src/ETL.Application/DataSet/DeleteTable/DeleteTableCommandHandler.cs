@@ -30,7 +30,7 @@ public sealed class DeleteTableCommandHandler : IRequestHandler<DeleteTableComma
 
     public async Task<Result> Handle(DeleteTableCommand request, CancellationToken cancellationToken)
     {
-        var existingDataSet = await _getByTableName.ExecuteAsync(request.TableName, cancellationToken).ConfigureAwait(false);
+        var existingDataSet = await _getByTableName.ExecuteAsync(request.TableName, cancellationToken);
         if (existingDataSet == null)
         {
             return Result.Failure(
@@ -42,9 +42,9 @@ public sealed class DeleteTableCommandHandler : IRequestHandler<DeleteTableComma
         {
             tx = _uow.BeginTransaction();
 
-            await _deleteStagingTable.ExecuteAsync(request.TableName, tx, cancellationToken).ConfigureAwait(false);
+            await _deleteStagingTable.ExecuteAsync(request.TableName, tx, cancellationToken);
 
-            await _deleteDataSet.ExecuteAsync(existingDataSet, tx, cancellationToken).ConfigureAwait(false);
+            await _deleteDataSet.ExecuteAsync(existingDataSet, tx, cancellationToken);
 
             _uow.CommitTransaction(tx);
             tx = null;

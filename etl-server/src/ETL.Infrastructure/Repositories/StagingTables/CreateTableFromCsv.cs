@@ -35,7 +35,7 @@ public sealed class CreateTableFromCsvOperation : ICreateTableFromCsv
 
         try
         {
-            var headers = await _headerReader.ReadHeaderAsync(seekable, cancellationToken).ConfigureAwait(false);
+            var headers = await _headerReader.ReadHeaderAsync(seekable, cancellationToken);
             if (headers == null || headers.Length == 0) throw new InvalidOperationException("CSV header is empty");
 
             var quotedColumns = headers.Select(h => _sanitizer.Sanitize(h)).ToArray();

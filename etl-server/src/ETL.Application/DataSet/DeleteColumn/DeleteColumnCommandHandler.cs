@@ -29,14 +29,14 @@ public sealed class DeleteColumnCommandHandler : IRequestHandler<DeleteColumnCom
 
     public async Task<Result> Handle(DeleteColumnCommand request, CancellationToken cancellationToken)
     {
-        var existing = await _getByTableName.ExecuteAsync(request.TableName, cancellationToken).ConfigureAwait(false);
+        var existing = await _getByTableName.ExecuteAsync(request.TableName, cancellationToken);
         if (existing == null)
         {
             return Result.Failure(
                 Error.NotFound("ColumnDelete.Failed", $"Table '{request.TableName}' not found!"));
         }
 
-        var columnExist = await _columnExists.ExecuteAsync(request.TableName, request.ColumnName, cancellationToken).ConfigureAwait(false);
+        var columnExist = await _columnExists.ExecuteAsync(request.TableName, request.ColumnName, cancellationToken);
         if (!columnExist)
         {
             return Result.Failure(
@@ -48,7 +48,7 @@ public sealed class DeleteColumnCommandHandler : IRequestHandler<DeleteColumnCom
         {
             tx = _uow.BeginTransaction();
 
-            await _deleteStagingColumn.ExecuteAsync(request.TableName, request.ColumnName, tx, cancellationToken).ConfigureAwait(false);
+            await _deleteStagingColumn.ExecuteAsync(request.TableName, request.ColumnName, tx, cancellationToken);
 
             _uow.CommitTransaction(tx);
             tx = null;
