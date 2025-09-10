@@ -1,9 +1,10 @@
-﻿using System.Text.Json;
-using ETL.Application.Common;
+﻿using System.Net;
+using System.Text.Json;
+using ETL.Application.Common.Options;
 using ETL.Infrastructure.OAuthClients.Abstractions;
 using ETL.Infrastructure.UserServices;
 using FluentAssertions;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 
 namespace ETL.Infrastructure.Tests.UserServices;
@@ -11,49 +12,34 @@ namespace ETL.Infrastructure.Tests.UserServices;
 public class OAuthUserReaderTests
 {
     private readonly IOAuthGetJson _getJson;
-    private readonly IConfiguration _configuration;
+    private readonly IOptions<AuthOptions> _options;
     private readonly OAuthUserReader _sut;
 
     public OAuthUserReaderTests()
     {
         _getJson = Substitute.For<IOAuthGetJson>();
-        _configuration = Substitute.For<IConfiguration>();
-        _configuration["Authentication:Realm"].Returns("myrealm");
-
-        _sut = new OAuthUserReader(_getJson, _configuration);
+        _options = Options.Create(new AuthOptions { Realm = "myrealm" });
+        _sut = new OAuthUserReader(_getJson, _options);
     }
 
-    // Constructor null-checks
     [Fact]
     public void Constructor_ShouldThrowArgumentNullException_WhenGetJsonIsNull()
     {
-        Action act = () => new OAuthUserReader(null!, _configuration);
+        // Act
+        Action act = () => new OAuthUserReader(null!, _options);
+
+        // Assert
         act.Should().Throw<ArgumentNullException>().WithParameterName("getJson");
     }
 
     [Fact]
-    public void Constructor_ShouldThrowArgumentNullException_WhenConfigurationIsNull()
+    public void Constructor_ShouldThrowArgumentNullException_WhenOptionsIsNull()
     {
-        Action act = () => new OAuthUserReader(_getJson, null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("configuration");
-    }
-
-    [Fact]
-    public async Task GetByIdAsync_ShouldReturnFailure_WhenGetJsonFails()
-    {
-        // Arrange
-        var userId = "u1";
-        var error = Error.Problem("err", "msg");
-
-        _getJson.GetJsonAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(Result.Failure<JsonElement>(error)));
-
         // Act
-        var result = await _sut.GetByIdAsync(userId);
+        Action act = () => new OAuthUserReader(_getJson, null!);
 
         // Assert
-        result.IsFailure.Should().BeTrue();
-        result.Error.Should().Be(error);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("options");
     }
 
     [Fact]
@@ -62,20 +48,25 @@ public class OAuthUserReaderTests
         // Arrange
         var userId = "u1";
         var json = JsonDocument.Parse("{\"id\":\"u1\",\"username\":\"user1\",\"email\":\"e1\",\"firstName\":\"f1\",\"lastName\":\"l1\"}").RootElement;
+        var expected = new ETL.Application.Common.DTOs.UserDto
+        {
+            Id = "u1",
+            Username = "user1",
+            Email = "e1",
+            FirstName = "f1",
+            LastName = "l1",
+            Role = null
+        };
 
         _getJson.GetJsonAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(Result.Success(json)));
+            .Returns(Task.FromResult(json));
 
         // Act
         var result = await _sut.GetByIdAsync(userId);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Id.Should().Be("u1");
-        result.Value.Username.Should().Be("user1");
-        result.Value.Email.Should().Be("e1");
-        result.Value.FirstName.Should().Be("f1");
-        result.Value.LastName.Should().Be("l1");
+        result.Should().BeEquivalentTo(expected);
+        await _getJson.Received(1).GetJsonAsync(Arg.Is<string>(s => s.Contains($"/users/{Uri.EscapeDataString(userId)}") && s.Contains(Uri.EscapeDataString("myrealm"))), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -83,39 +74,39 @@ public class OAuthUserReaderTests
     {
         // Arrange
         var userId = "u1";
-        var json = JsonDocument.Parse("{\"id\":\"u1\"}").RootElement; // only id
+        var json = JsonDocument.Parse("{\"id\":\"u1\"}").RootElement;
+        var expected = new ETL.Application.Common.DTOs.UserDto
+        {
+            Id = "u1",
+            Username = null,
+            Email = null,
+            FirstName = null,
+            LastName = null,
+            Role = null
+        };
 
         _getJson.GetJsonAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(Result.Success(json)));
+            .Returns(Task.FromResult(json));
 
         // Act
         var result = await _sut.GetByIdAsync(userId);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Id.Should().Be("u1");
-        result.Value.Username.Should().BeNull();
-        result.Value.Email.Should().BeNull();
-        result.Value.FirstName.Should().BeNull();
-        result.Value.LastName.Should().BeNull();
+        result.Should().BeEquivalentTo(expected);
     }
 
     [Fact]
-    public async Task GetByIdAsync_ShouldCallCorrectPath()
+    public async Task GetByIdAsync_ShouldThrow_When_GetJsonThrowsHttpRequestException()
     {
         // Arrange
         var userId = "u1";
-        var json = JsonDocument.Parse("{\"id\":\"u1\"}").RootElement;
-
         _getJson.GetJsonAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(Result.Success(json)));
+            .Returns<Task<JsonElement>>(_ => throw new HttpRequestException("not found", null, HttpStatusCode.NotFound));
 
         // Act
-        await _sut.GetByIdAsync(userId);
+        Func<Task> act = () => _sut.GetByIdAsync(userId);
 
         // Assert
-        await _getJson.Received(1).GetJsonAsync(
-            Arg.Is<string>(s => s.Contains($"/users/{userId}")),
-            Arg.Any<CancellationToken>());
+        await act.Should().ThrowAsync<HttpRequestException>();
     }
 }

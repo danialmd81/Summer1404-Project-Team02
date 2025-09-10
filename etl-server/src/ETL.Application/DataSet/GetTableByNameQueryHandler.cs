@@ -26,7 +26,7 @@ public sealed class GetTableByNameQueryHandler : IRequestHandler<GetTableByNameQ
             return Result.Failure<string>(
                 Error.NotFound("TableRemove.Failed", $"Table '{request.TableName}' not found!"));
         }
-        
+
         return await _getStagingTableByName.ExecuteAsync(request.TableName, cancellationToken);
     }
 }

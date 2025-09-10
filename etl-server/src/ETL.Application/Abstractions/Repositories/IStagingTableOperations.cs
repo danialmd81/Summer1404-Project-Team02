@@ -2,6 +2,11 @@
 
 namespace ETL.Application.Abstractions.Repositories;
 
+public interface IGetStagingTableByName
+{
+    Task<string> ExecuteAsync(string tableName, CancellationToken cancellationToken = default);
+}
+
 public interface ICreateTableFromCsv
 {
     Task ExecuteAsync(string tableName, Stream csvStream, IDbTransaction? tx = null, CancellationToken cancellationToken = default);
@@ -30,9 +35,4 @@ public interface IDeleteStagingColumn
 public interface IStagingColumnExists
 {
     Task<bool> ExecuteAsync(string tableName, string columnName, CancellationToken cancellationToken = default);
-}
-
-public interface IGetStagingTableByName
-{
-    Task<string> ExecuteAsync(string tableName, CancellationToken cancellationToken = default);
 }

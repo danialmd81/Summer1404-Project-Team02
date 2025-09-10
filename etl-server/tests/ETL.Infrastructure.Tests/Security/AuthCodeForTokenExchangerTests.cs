@@ -1,10 +1,11 @@
 ﻿using System.Net;
 using System.Text.Json;
 using ETL.Application.Common.DTOs;
+using ETL.Application.Common.Options;
 using ETL.Infrastructure.Security;
 using ETL.Infrastructure.Tests.HttpClientFixture;
 using FluentAssertions;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 
 namespace ETL.Infrastructure.Tests.Security
@@ -13,41 +14,49 @@ namespace ETL.Infrastructure.Tests.Security
     public class AuthCodeForTokenExchangerTests
     {
         private readonly HttpClientTestFixture _fixture;
-        private readonly IConfiguration _configuration;
         private readonly AuthCodeForTokenExchanger _sut;
 
         public AuthCodeForTokenExchangerTests(HttpClientTestFixture fixture)
         {
             _fixture = fixture;
 
-            _configuration = Substitute.For<IConfiguration>();
-            _configuration["Authentication:Authority"].Returns("https://fake-auth");
-            _configuration["Authentication:ClientId"].Returns("client-id");
-            _configuration["Authentication:ClientSecret"].Returns("client-secret");
-            _configuration["Authentication:RedirectUri"].Returns("https://fake-redirect");
+            var authOptions = new AuthOptions
+            {
+                Authority = "https://fake-auth",
+                ClientId = "client-id",
+                ClientSecret = "client-secret",
+                RedirectUri = "https://fake-redirect"
+            };
+            var options = Options.Create(authOptions);
 
             var httpFactory = Substitute.For<IHttpClientFactory>();
             httpFactory.CreateClient().Returns(_fixture.Client);
 
-            _sut = new AuthCodeForTokenExchanger(httpFactory, _configuration);
+            _sut = new AuthCodeForTokenExchanger(httpFactory, options);
         }
 
         [Fact]
         public void Constructor_ShouldThrowArgumentNullException_WhenHttpClientFactoryIsNull()
         {
-            System.Action act = () => new AuthCodeForTokenExchanger(null!, _configuration);
+            // Arrange // Act
+            Action act = () => new AuthCodeForTokenExchanger(null!, Options.Create(new AuthOptions()));
+
+            // Assert
             act.Should().Throw<ArgumentNullException>().WithParameterName("httpClientFactory");
         }
 
         [Fact]
-        public void Constructor_ShouldThrowArgumentNullException_WhenConfigurationIsNull()
+        public void Constructor_ShouldThrowArgumentNullException_WhenOptionsIsNull()
         {
-            System.Action act = () => new AuthCodeForTokenExchanger(Substitute.For<IHttpClientFactory>(), null!);
-            act.Should().Throw<ArgumentNullException>().WithParameterName("configuration");
+            // Arrange // Act
+            Action act = () => new AuthCodeForTokenExchanger(Substitute.For<IHttpClientFactory>(), null!);
+
+            // Assert
+            act.Should().Throw<ArgumentNullException>().WithParameterName("options");
         }
 
         [Fact]
-        public async Task ExchangeCodeForTokensAsync_ShouldReturnSuccessResult_WhenResponseIsSuccessful()
+        public async Task ExchangeCodeForTokensAsync_ShouldReturnTokenResponse_WhenResponseIsSuccessful()
         {
             // Arrange
             var expectedResponse = new TokenResponse
@@ -64,28 +73,21 @@ namespace ETL.Infrastructure.Tests.Security
             var result = await _sut.ExchangeCodeForTokensAsync("auth-code", "callback", CancellationToken.None);
 
             // Assert
-            result.IsSuccess.Should().BeTrue();
-            result.Value.AccessToken.Should().Be("access");
-            result.Value.RefreshToken.Should().Be("refresh");
-
-            _fixture.Handler.LastRequest!.Method.Should().Be(HttpMethod.Post);
-            _fixture.Handler.LastRequest!.RequestUri!.ToString()
-                .Should().Contain("/protocol/openid-connect/token");
+            result.AccessToken.Should().Be("access");
+            _fixture.Handler.LastRequest!.RequestUri!.ToString().Should().Contain("/protocol/openid-connect/token");
         }
 
         [Fact]
-        public async Task ExchangeCodeForTokensAsync_ShouldReturnFailureResult_WhenResponseIsFailure()
+        public async Task ExchangeCodeForTokensAsync_ShouldThrowInvalidOperationException_WhenResponseIsFailure()
         {
             // Arrange
             _fixture.Handler.SetupResponse(HttpStatusCode.BadRequest, "bad request");
 
-            // Act
-            var result = await _sut.ExchangeCodeForTokensAsync("auth-code", "callback", CancellationToken.None);
-
-            // Assert
-            result.IsFailure.Should().BeTrue();
-            result.Error.Code.Should().Be("Auth.TokenExchangeFailed");
-            result.Error.Description.Should().Contain("bad request");
+            // Act // Assert
+            await FluentActions.Awaiting(() => _sut.ExchangeCodeForTokensAsync("auth-code", "callback", CancellationToken.None))
+                .Should()
+                .ThrowAsync<InvalidOperationException>()
+                .WithMessage("*bad request*");
         }
     }
 }

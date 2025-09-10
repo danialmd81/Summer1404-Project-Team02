@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using ETL.Application.Common.DTOs;
 using ETL.Application.User;
 using FluentAssertions;
 
@@ -28,7 +29,7 @@ public class GetUserProfileQueryHandlerTests
         if (email != null) claims.Add(new Claim(ClaimTypes.Email, email));
         if (firstName != null) claims.Add(new Claim(ClaimTypes.GivenName, firstName));
         if (lastName != null) claims.Add(new Claim(ClaimTypes.Surname, lastName));
-        if(role != null) claims.Add(new Claim(ClaimTypes.Role, role));
+        if (role != null) claims.Add(new Claim(ClaimTypes.Role, role));
 
         return new ClaimsPrincipal(new ClaimsIdentity(claims));
     }
@@ -36,36 +37,46 @@ public class GetUserProfileQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldMapAllClaims_WhenPresent()
     {
+        // Arrange
         var user = CreateUser();
-        var command = new GetUserProfileQuery(user);
+        var query = new GetUserProfileQuery(user);
+        var expected = new UserDto
+        {
+            Id = "123",
+            Username = "testuser",
+            Email = "test@mail.com",
+            FirstName = "John",
+            LastName = "Doe",
+            Role = "User"
+        };
 
-        var result = await _sut.Handle(command, default);
+        // Act
+        var result = await _sut.Handle(query, default);
 
-        result.Id.Should().Be("123");
-        result.Username.Should().Be("testuser");
-        result.Email.Should().Be("test@mail.com");
-        result.FirstName.Should().Be("John");
-        result.LastName.Should().Be("Doe");
-        result.Role.Should().Be("User");
+        // Assert
+        result.Should().BeEquivalentTo(expected);
     }
 
     [Fact]
     public async Task Handle_ShouldReturnNullProperties_WhenClaimsMissing()
     {
         // Arrange
-        var user = new ClaimsPrincipal(new ClaimsIdentity()); // no claims
-        var command = new GetUserProfileQuery(user);
+        var user = new ClaimsPrincipal(new ClaimsIdentity());
+        var query = new GetUserProfileQuery(user);
+        var expected = new UserDto
+        {
+            Id = null,
+            Username = null,
+            Email = null,
+            FirstName = null,
+            LastName = null,
+            Role = null
+        };
 
         // Act
-        var result = await _sut.Handle(command, default);
-        
+        var result = await _sut.Handle(query, default);
+
         // Assert
-        result.Id.Should().BeNull();
-        result.Username.Should().BeNull();
-        result.Email.Should().BeNull();
-        result.FirstName.Should().BeNull();
-        result.LastName.Should().BeNull();
-        result.Role.Should().BeNull();
+        result.Should().BeEquivalentTo(expected);
     }
-    
 }

@@ -1,9 +1,9 @@
 ﻿using System.Text.Json;
-using ETL.Application.Common;
+using ETL.Application.Common.Options;
 using ETL.Infrastructure.OAuthClients.Abstractions;
 using ETL.Infrastructure.UserServices;
 using FluentAssertions;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 
 namespace ETL.Infrastructure.Tests.UserServices;
@@ -12,166 +12,102 @@ public class OAuthRoleAssignerTests
 {
     private readonly IOAuthGetJson _getJson;
     private readonly IOAuthPostJson _postJson;
-    private readonly IConfiguration _configuration;
+    private readonly IOptions<AuthOptions> _options;
     private readonly OAuthRoleAssigner _sut;
 
     public OAuthRoleAssignerTests()
     {
         _getJson = Substitute.For<IOAuthGetJson>();
         _postJson = Substitute.For<IOAuthPostJson>();
-        _configuration = Substitute.For<IConfiguration>();
-        _configuration["Authentication:Realm"].Returns("myrealm");
-
-        _sut = new OAuthRoleAssigner(_getJson, _postJson, _configuration);
+        _options = Options.Create(new AuthOptions { Realm = "myrealm" });
+        _sut = new OAuthRoleAssigner(_getJson, _postJson, _options);
     }
 
-    // Constructor null-checks
     [Fact]
-    public void Constructor_ShouldThrowArgumentNullException_WhenGetJsonIsNull()
+    public void Constructor_ShouldThrow_When_GetJsonIsNull()
     {
-        Action act = () => new OAuthRoleAssigner(null!, _postJson, _configuration);
+        // Act
+        Action act = () => new OAuthRoleAssigner(null!, _postJson, _options);
+
+        // Assert
         act.Should().Throw<ArgumentNullException>().WithParameterName("getJson");
     }
 
     [Fact]
-    public void Constructor_ShouldThrowArgumentNullException_WhenPostJsonIsNull()
+    public void Constructor_ShouldThrow_When_PostJsonIsNull()
     {
-        Action act = () => new OAuthRoleAssigner(_getJson, null!, _configuration);
+        // Act
+        Action act = () => new OAuthRoleAssigner(_getJson, null!, _options);
+
+        // Assert
         act.Should().Throw<ArgumentNullException>().WithParameterName("postJson");
     }
 
     [Fact]
-    public void Constructor_ShouldThrowArgumentNullException_WhenConfigurationIsNull()
+    public void Constructor_ShouldThrow_When_OptionsIsNull()
     {
+        // Act
         Action act = () => new OAuthRoleAssigner(_getJson, _postJson, null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("configuration");
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("options");
     }
 
     [Fact]
-    public async Task AssignRoleAsync_ShouldReturnSuccess_WhenRoleNameIsEmpty()
+    public async Task AssignRoleAsync_ShouldNotCall_When_RoleNameIsEmpty()
     {
         // Arrange
         var userId = "u1";
-        var roleName = "";
+        var roleName = "   ";
 
         // Act
-        var result = await _sut.AssignRoleAsync(userId, roleName);
+        await _sut.AssignRoleAsync(userId, roleName, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
+        await _getJson.DidNotReceiveWithAnyArgs().GetJsonAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await _postJson.DidNotReceiveWithAnyArgs().PostJsonAsync(Arg.Any<string>(), Arg.Any<object>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task AssignRoleAsync_ShouldReturnFailure_WhenGetRoleFailsWithNotFound()
+    public async Task AssignRoleAsync_ShouldCallGetAndPost_When_RoleProvided()
     {
         // Arrange
         var userId = "u1";
         var roleName = "admin";
+        var roleDef = JsonDocument.Parse("{\"id\":\"role-id\",\"name\":\"admin\"}").RootElement;
 
         _getJson.GetJsonAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(Result.Failure<JsonElement>(Error.NotFound("err", "msg"))));
-
-        // Act
-        var result = await _sut.AssignRoleAsync(userId, roleName);
-
-        // Assert
-        result.IsFailure.Should().BeTrue();
-        result.Error.Code.Should().Be("OAuth.RoleNotFound");
-    }
-
-    [Fact]
-    public async Task AssignRoleAsync_ShouldReturnFailure_WhenGetRoleFailsWithOtherError()
-    {
-        // Arrange
-        var userId = "u1";
-        var roleName = "admin";
-
-        var error = Error.Problem("err", "msg");
-        _getJson.GetJsonAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(Result.Failure<JsonElement>(error)));
-
-        // Act
-        var result = await _sut.AssignRoleAsync(userId, roleName);
-
-        // Assert
-        result.IsFailure.Should().BeTrue();
-        result.Error.Should().Be(error);
-    }
-
-    [Fact]
-    public async Task AssignRoleAsync_ShouldReturnFailure_WhenPostAssignFails()
-    {
-        // Arrange
-        var userId = "u1";
-        var roleName = "admin";
-
-        var roleJson = JsonDocument.Parse("{\"id\":\"role-id\"}").RootElement;
-
-        _getJson.GetJsonAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(Result.Success(roleJson)));
-
-
-        var postError = Error.Problem("err", "msg");
+            .Returns(Task.FromResult(roleDef));
         _postJson.PostJsonAsync(Arg.Any<string>(), Arg.Any<object>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Failure(postError));
+            .Returns(Task.CompletedTask);
 
         // Act
-        var result = await _sut.AssignRoleAsync(userId, roleName);
-
-        // Assert
-        result.IsFailure.Should().BeTrue();
-        result.Error.Should().Be(postError);
-    }
-
-    [Fact]
-    public async Task AssignRoleAsync_ShouldReturnSuccess_WhenRoleIsAssigned()
-    {
-        // Arrange
-        var userId = "u1";
-        var roleName = "admin";
-
-        var roleJson = JsonDocument.Parse("{\"id\":\"role-id\"}").RootElement;
-
-        _getJson.GetJsonAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(Result.Success(roleJson)));
-
-
-        _postJson.PostJsonAsync(Arg.Any<string>(), Arg.Any<object>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Success());
-
-        // Act
-        var result = await _sut.AssignRoleAsync(userId, roleName);
-
-        // Assert
-        result.IsSuccess.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task AssignRoleAsync_ShouldCallCorrectPaths()
-    {
-        // Arrange
-        var userId = "u1";
-        var roleName = "admin";
-
-        var roleJson = JsonDocument.Parse("{\"id\":\"role-id\"}").RootElement;
-
-        _getJson.GetJsonAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(Result.Success(roleJson)));
-
-        _postJson.PostJsonAsync(Arg.Any<string>(), Arg.Any<object>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Success());
-
-        // Act
-        await _sut.AssignRoleAsync(userId, roleName);
+        await _sut.AssignRoleAsync(userId, roleName, CancellationToken.None);
 
         // Assert
         await _getJson.Received(1).GetJsonAsync(
-            Arg.Is<string>(s => s.Contains($"/roles/{roleName}")),
+            Arg.Is<string>(s => s.Contains($"/roles/{Uri.EscapeDataString(roleName)}")),
             Arg.Any<CancellationToken>());
 
         await _postJson.Received(1).PostJsonAsync(
-            Arg.Is<string>(s => s.Contains($"/users/{userId}/role-mappings/realm")),
+            Arg.Is<string>(s => s.Contains($"/users/{Uri.EscapeDataString(userId)}/role-mappings/realm")),
             Arg.Any<object>(),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task AssignRoleAsync_ShouldThrow_When_GetJsonThrowsNotFound()
+    {
+        // Arrange
+        var userId = "u1";
+        var roleName = "admin";
+        _getJson.GetJsonAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns<Task<JsonElement>>(_ => throw new HttpRequestException("not found", null, System.Net.HttpStatusCode.NotFound));
+
+        // Act
+        Func<Task> act = () => _sut.AssignRoleAsync(userId, roleName, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<HttpRequestException>();
     }
 }

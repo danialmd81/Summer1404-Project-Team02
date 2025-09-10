@@ -1,112 +1,115 @@
 ﻿using System.Text.Json;
-using ETL.Application.Common;
-using ETL.Infrastructure.OAuthClients.Abstractions;
+using ETL.Application.Common.DTOs;
 using ETL.Infrastructure.UserServices;
+using ETL.Infrastructure.UserServices.Abstractions;
 using FluentAssertions;
-using Microsoft.Extensions.Configuration;
 using NSubstitute;
 
 namespace ETL.Infrastructure.Tests.UserServices;
 
 public class OAuthAllUserReaderTests
 {
-    private readonly IOAuthGetJsonArray _getArray;
-    private readonly IConfiguration _configuration;
+    private readonly IUserFetcher _userFetcher;
+    private readonly IUserJsonMapper _userMapper;
+    private readonly IUserRoleAssigner _roleAssigner;
     private readonly OAuthAllUserReader _sut;
 
     public OAuthAllUserReaderTests()
     {
-        _getArray = Substitute.For<IOAuthGetJsonArray>();
-        _configuration = Substitute.For<IConfiguration>();
-        _configuration["Authentication:Realm"].Returns("myrealm");
+        _userFetcher = Substitute.For<IUserFetcher>();
+        _userMapper = Substitute.For<IUserJsonMapper>();
+        _roleAssigner = Substitute.For<IUserRoleAssigner>();
 
-        _sut = new OAuthAllUserReader(_getArray, _configuration);
+        _sut = new OAuthAllUserReader(_userFetcher, _userMapper, _roleAssigner);
     }
 
-    // Constructor null-checks
     [Fact]
-    public void Constructor_ShouldThrowArgumentNullException_WhenGetArrayIsNull()
+    public void Constructor_ShouldThrow_WhenUserFetcherIsNull()
     {
-        Action act = () => new OAuthAllUserReader(null!, _configuration);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("getArray");
+        // Act
+        Action act = () => new OAuthAllUserReader(null!, _userMapper, _roleAssigner);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("userFetcher");
     }
 
     [Fact]
-    public void Constructor_ShouldThrowArgumentNullException_WhenConfigurationIsNull()
+    public void Constructor_ShouldThrow_WhenUserMapperIsNull()
     {
-        Action act = () => new OAuthAllUserReader(_getArray, null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("configuration");
+        // Act
+        Action act = () => new OAuthAllUserReader(_userFetcher, null!, _roleAssigner);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("userMapper");
     }
 
     [Fact]
-    public async Task GetAllAsync_ShouldReturnMappedUsers_WhenResponseIsSuccessful()
+    public void Constructor_ShouldThrow_WhenRoleAssignerIsNull()
+    {
+        // Act
+        Action act = () => new OAuthAllUserReader(_userFetcher, _userMapper, null!);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("roleAssigner");
+    }
+
+    [Fact]
+    public async Task GetAllAsync_ShouldReturnMappedUsersAndAssignedRoles_WhenSuccessful()
     {
         // Arrange
-        var jsonElements = new List<JsonElement>
+        var raw = new List<JsonElement>
         {
-            JsonDocument.Parse("{\"id\":\"1\",\"username\":\"u1\",\"email\":\"e1\",\"firstName\":\"f1\",\"lastName\":\"l1\"}").RootElement,
-            JsonDocument.Parse("{\"id\":\"2\",\"username\":\"u2\",\"email\":\"e2\",\"firstName\":\"f2\",\"lastName\":\"l2\"}").RootElement
+            JsonDocument.Parse("{\"id\":\"1\",\"username\":\"u1\"}").RootElement,
+            JsonDocument.Parse("{\"id\":\"2\",\"username\":\"u2\"}").RootElement
         };
 
-        _getArray.GetJsonArrayAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Success(jsonElements));
+        var mapped = new List<UserDto>
+        {
+            new UserDto { Id = "1", Username = "u1", Email = "", FirstName = "", LastName = "", Role = null },
+            new UserDto { Id = "2", Username = "u2", Email = "", FirstName = "", LastName = "", Role = null }
+        };
+
+        _userFetcher.FetchAllUsersRawAsync(Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(raw));
+
+        _userMapper.Map(raw[0]).Returns(mapped[0]);
+        _userMapper.Map(raw[1]).Returns(mapped[1]);
+
+        _roleAssigner
+            .When(r => r.AssignRolesAsync(Arg.Any<List<UserDto>>(), Arg.Any<IEnumerable<string>>(), Arg.Any<CancellationToken>()))
+            .Do(ci =>
+            {
+                var usersArg = ci.ArgAt<List<UserDto>>(0);
+                usersArg[0].Role = "Admin";
+                usersArg[1].Role = "User";
+            });
+
+        var expected = new List<UserDto>
+        {
+            new UserDto { Id = "1", Username = "u1", Email = "", FirstName = "", LastName = "", Role = "Admin" },
+            new UserDto { Id = "2", Username = "u2", Email = "", FirstName = "", LastName = "", Role = "User" }
+        };
 
         // Act
         var result = await _sut.GetAllAsync();
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().HaveCount(2);
-        result.Value[0].Id.Should().Be("1");
-        result.Value[0].Username.Should().Be("u1");
-        result.Value[1].Email.Should().Be("e2");
+        result.Should().BeEquivalentTo(expected);
     }
 
     [Fact]
-    public async Task GetAllAsync_ShouldReturnFailure_WhenGetArrayFails()
+    public async Task GetAllAsync_ShouldReturnEmptyList_WhenFetcherReturnsEmpty()
     {
         // Arrange
-        var error = Error.Problem("err", "msg");
-        _getArray.GetJsonArrayAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Failure<List<JsonElement>>(error));
+        _userFetcher.FetchAllUsersRawAsync(Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new List<JsonElement>()));
+
+        var expected = new List<UserDto>();
 
         // Act
         var result = await _sut.GetAllAsync();
 
         // Assert
-        result.IsFailure.Should().BeTrue();
-        result.Error.Should().Be(error);
-    }
-
-    [Fact]
-    public async Task GetAllAsync_ShouldIncludeFirstAndMaxQueryParameters_WhenProvided()
-    {
-        // Arrange
-        var jsonElements = new List<JsonElement>();
-        _getArray.GetJsonArrayAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Success(jsonElements));
-
-        // Act
-        await _sut.GetAllAsync(first: 5, max: 10);
-
-        // Assert
-        await _getArray.Received(1).GetJsonArrayAsync(
-            Arg.Is<string>(s => s.Contains("first=5") && s.Contains("max=10")),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task GetAllAsync_ShouldHandleEmptyJsonList()
-    {
-        // Arrange
-        _getArray.GetJsonArrayAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Success(new List<JsonElement>()));
-
-        // Act
-        var result = await _sut.GetAllAsync();
-
-        // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().BeEmpty();
+        result.Should().BeEquivalentTo(expected);
     }
 }

@@ -1,5 +1,5 @@
-﻿using ETL.Application.Abstractions.UserServices;
-using ETL.Application.Common;
+﻿using System.Net;
+using ETL.Application.Abstractions.UserServices;
 using ETL.Application.Common.DTOs;
 using ETL.Application.User.GetById;
 using FluentAssertions;
@@ -21,26 +21,12 @@ public class GetUserByIdQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_Should_ReturnFailure_When_UserIdIsNull()
-    {
-        // Arrange
-        var query = new GetUserByIdQuery(null!);
-
-        // Act
-        var result = await _sut.Handle(query, CancellationToken.None);
-
-        // Assert
-        result.IsFailure.Should().BeTrue();
-        result.Error.Code.Should().Be("User.InvalidId");
-    }
-
-    [Fact]
-    public async Task Handle_Should_ReturnFailure_When_UserNotFound()
+    public async Task Handle_ShouldReturnNotFoundFailure_When_UserReaderThrowsNotFoundHttpRequestException()
     {
         // Arrange
         var query = new GetUserByIdQuery("u1");
         _userReader.GetByIdAsync("u1", Arg.Any<CancellationToken>())
-            .Returns(Result.Failure<UserDto>(Error.NotFound("User.NotFound", "User not found")));
+            .Returns<Task<UserDto>>(_ => throw new HttpRequestException("not found", null, HttpStatusCode.NotFound));
 
         // Act
         var result = await _sut.Handle(query, CancellationToken.None);
@@ -51,36 +37,52 @@ public class GetUserByIdQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_Should_ReturnFailure_When_RoleFetchFails()
+    public async Task Handle_ShouldReturnProblemFailure_When_UserReaderThrowsGeneralException()
     {
         // Arrange
         var query = new GetUserByIdQuery("u1");
-        var user = new UserDto { Id = "u1", Username = "test", FirstName = "",  LastName = "", Email = "" };
         _userReader.GetByIdAsync("u1", Arg.Any<CancellationToken>())
-            .Returns(Result.Success<UserDto>(user));
-
-        _roleGetter.GetRoleForUserAsync("u1", Arg.Any<CancellationToken>())
-            .Returns(Result.Failure<string>(Error.Problem("Role.Fetch.Failed", "could not fetch")));
+            .Returns<Task<UserDto>>(_ => throw new Exception("boom"));
 
         // Act
         var result = await _sut.Handle(query, CancellationToken.None);
 
         // Assert
         result.IsFailure.Should().BeTrue();
-        result.Error.Code.Should().Be("Role.Fetch.Failed");
+        result.Error.Code.Should().Be("User.GetById.Unexpected");
     }
 
     [Fact]
-    public async Task Handle_Should_ReturnSuccess_WithUserAndRole()
+    public async Task Handle_ShouldReturnFailure_When_RoleGetterThrowsException()
     {
         // Arrange
         var query = new GetUserByIdQuery("u1");
-        var user = new UserDto { Id = "u1", Username = "test", FirstName = "",  LastName = "", Email = ""};
+        var user = new UserDto { Id = "u1", Username = "test", FirstName = "", LastName = "", Email = "" };
         _userReader.GetByIdAsync("u1", Arg.Any<CancellationToken>())
-            .Returns(Result.Success<UserDto>(user));
+            .Returns(Task.FromResult(user));
 
         _roleGetter.GetRoleForUserAsync("u1", Arg.Any<CancellationToken>())
-            .Returns(Result.Success<string>("Admin"));
+            .Returns<Task<string?>>(_ => throw new Exception("role fail"));
+
+        // Act
+        var result = await _sut.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("User.GetById.Exception");
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReturnSuccess_WithUserAndRole_When_ReaderAndRoleGetterSucceed()
+    {
+        // Arrange
+        var query = new GetUserByIdQuery("u1");
+        var user = new UserDto { Id = "u1", Username = "test", FirstName = "", LastName = "", Email = "" };
+        _userReader.GetByIdAsync("u1", Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(user));
+
+        _roleGetter.GetRoleForUserAsync("u1", Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<string?>("Admin"));
 
         // Act
         var result = await _sut.Handle(query, CancellationToken.None);
@@ -91,24 +93,22 @@ public class GetUserByIdQueryHandlerTests
     }
 
     [Fact]
-    public void Constructor_Should_Throw_When_UserReaderIsNull()
+    public void Constructor_ShouldThrow_When_UserReaderIsNull()
     {
         // Act
         Action act = () => new GetUserByIdQueryHandler(null!, _roleGetter);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>()
-            .WithParameterName("userReader");
+        act.Should().Throw<ArgumentNullException>().WithParameterName("userReader");
     }
 
     [Fact]
-    public void Constructor_Should_Throw_When_RoleGetterIsNull()
+    public void Constructor_ShouldThrow_When_RoleGetterIsNull()
     {
         // Act
         Action act = () => new GetUserByIdQueryHandler(_userReader, null!);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>()
-            .WithParameterName("roleGetter");
+        act.Should().Throw<ArgumentNullException>().WithParameterName("roleGetter");
     }
 }

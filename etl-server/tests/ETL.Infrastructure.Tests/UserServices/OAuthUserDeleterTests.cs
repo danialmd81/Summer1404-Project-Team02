@@ -25,7 +25,6 @@ public class OAuthUserDeleterTests
         _sut = new OAuthUserDeleter(_getJson, _deleteJson, _configuration);
     }
 
-    // Constructor null-checks
     [Fact]
     public void Constructor_ShouldThrowArgumentNullException_WhenGetJsonIsNull()
     {
