@@ -18,7 +18,7 @@ public sealed class GetAllDataSetsQueryHandler : IRequestHandler<GetAllDataSetsQ
 
     public async Task<Result<IEnumerable<DataSetDto>>> Handle(GetAllDataSetsQuery request, CancellationToken cancellationToken)
     {
-        var items = await _getAllDataSets.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        var items = await _getAllDataSets.ExecuteAsync(cancellationToken);
 
         var dataSetDtos = items
             .Select(d => new DataSetDto(d.Id, d.TableName, d.UploadedByUserId, d.CreatedAt))

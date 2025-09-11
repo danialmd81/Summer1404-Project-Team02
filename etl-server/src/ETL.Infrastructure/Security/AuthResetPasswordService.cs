@@ -15,6 +15,7 @@ public class AuthRestPasswordService : IAuthRestPasswordService
     public AuthRestPasswordService(IHttpClientFactory httpClientFactory, IAdminTokenService adminTokenService, IOptions<AuthOptions> options)
     {
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+        _adminTokenService = adminTokenService ?? throw new ArgumentNullException(nameof(adminTokenService));
         _authOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 

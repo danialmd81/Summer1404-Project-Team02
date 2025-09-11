@@ -36,8 +36,4 @@
       <ProjectReference Include="..\..\src\ETL.Infrastructure\ETL.Infrastructure.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Repositories\" />
-    </ItemGroup>
-
 </Project>

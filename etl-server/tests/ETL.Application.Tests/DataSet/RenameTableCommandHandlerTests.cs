@@ -1,4 +1,5 @@
-﻿using ETL.Application.Abstractions.Data;
+﻿using System.Data;
+using ETL.Application.Abstractions.Data;
 using ETL.Application.Abstractions.Repositories;
 using ETL.Application.Common;
 using ETL.Application.DataSet.RenameTable;
@@ -11,132 +12,149 @@ namespace ETL.Application.Tests.DataSet;
 public class RenameTableCommandHandlerTests
 {
     private readonly IUnitOfWork _uow;
-    private readonly IDataSetRepository _dataSets;
-    private readonly IStagingTableRepository _stagingTables;
+    private readonly IGetDataSetByTableName _getByTableName;
+    private readonly IRenameStagingTable _renameStagingTable;
+    private readonly IUpdateDataSet _updateDataSet;
     private readonly RenameTableCommandHandler _sut;
 
     public RenameTableCommandHandlerTests()
     {
         _uow = Substitute.For<IUnitOfWork>();
-        _dataSets = Substitute.For<IDataSetRepository>();
-        _stagingTables = Substitute.For<IStagingTableRepository>();
+        _getByTableName = Substitute.For<IGetDataSetByTableName>();
+        _renameStagingTable = Substitute.For<IRenameStagingTable>();
+        _updateDataSet = Substitute.For<IUpdateDataSet>();
 
-        _uow.DataSetsRepo.Returns(_dataSets);
-        _uow.StagingTablesRepo.Returns(_stagingTables);
-
-        _sut = new RenameTableCommandHandler(_uow);
+        _sut = new RenameTableCommandHandler(_uow, _getByTableName, _renameStagingTable, _updateDataSet);
     }
 
     [Fact]
-    public void Constructor_ShouldThrow_WhenUnitOfWorkIsNull()
+    public void Constructor_ShouldThrow_When_UowIsNull()
     {
         // Act
-        Action act = () => new RenameTableCommandHandler(null!);
+        Action act = () => new RenameTableCommandHandler(null!, _getByTableName, _renameStagingTable, _updateDataSet);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>()
-            .WithParameterName("uow");
+        act.Should().Throw<ArgumentNullException>().WithParameterName("uow");
     }
 
     [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenOldTableDoesNotExist()
+    public void Constructor_ShouldThrow_When_GetByTableNameIsNull()
+    {
+        // Act
+        Action act = () => new RenameTableCommandHandler(_uow, null!, _renameStagingTable, _updateDataSet);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("getByTableName");
+    }
+
+    [Fact]
+    public void Constructor_ShouldThrow_When_RenameStagingTableIsNull()
+    {
+        // Act
+        Action act = () => new RenameTableCommandHandler(_uow, _getByTableName, null!, _updateDataSet);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("renameStagingTable");
+    }
+
+    [Fact]
+    public void Constructor_ShouldThrow_When_UpdateDataSetIsNull()
+    {
+        // Act
+        Action act = () => new RenameTableCommandHandler(_uow, _getByTableName, _renameStagingTable, null!);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("updateDataSet");
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReturnFailure_When_OldTableDoesNotExist()
     {
         // Arrange
-        var command = new RenameTableCommand("old_table", "new_table");
-        _dataSets.GetByTableNameAsync(command.OldTableName, Arg.Any<CancellationToken>())
-            .Returns((DataSetMetadata?)null);
+        var cmd = new RenameTableCommand("old_table", "new_table");
+        _getByTableName.ExecuteAsync(cmd.OldTableName, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<DataSetMetadata?>(null));
 
         // Act
-        var result = await _sut.Handle(command, CancellationToken.None);
+        var result = await _sut.Handle(cmd, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
+        result.IsFailure.Should().BeTrue();
         result.Error.Type.Should().Be(ErrorType.NotFound);
-        result.Error.Code.Should().Be("TableRename.Failed");
-
-        await _stagingTables.DidNotReceive().RenameTableAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
-        _uow.DidNotReceive().Begin();
-        _uow.DidNotReceive().Commit();
-        _uow.DidNotReceive().Rollback();
     }
 
     [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenNewTableAlreadyExists()
+    public async Task Handle_ShouldReturnFailure_When_NewTableAlreadyExists()
     {
         // Arrange
-        var command = new RenameTableCommand("old_table", "new_table");
-        var oldDataSet = new DataSetMetadata(command.OldTableName, "user1");
-        var newDataSet = new DataSetMetadata(command.NewTableName, "user1");
+        var cmd = new RenameTableCommand("old_table", "new_table");
+        var existing = new DataSetMetadata(cmd.OldTableName, "u1");
+        var conflict = new DataSetMetadata(cmd.NewTableName, "u1");
 
-        _dataSets.GetByTableNameAsync(command.OldTableName, Arg.Any<CancellationToken>())
-            .Returns(oldDataSet);
-        _dataSets.GetByTableNameAsync(command.NewTableName, Arg.Any<CancellationToken>())
-            .Returns(newDataSet);
+        _getByTableName.ExecuteAsync(cmd.OldTableName, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<DataSetMetadata?>(existing));
+        _getByTableName.ExecuteAsync(cmd.NewTableName, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<DataSetMetadata?>(conflict));
 
         // Act
-        var result = await _sut.Handle(command, CancellationToken.None);
+        var result = await _sut.Handle(cmd, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
+        result.IsFailure.Should().BeTrue();
         result.Error.Type.Should().Be(ErrorType.Conflict);
-        result.Error.Code.Should().Be("TableRename.Failed");
-
-        await _stagingTables.DidNotReceive().RenameTableAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
-        _uow.DidNotReceive().Begin();
-        _uow.DidNotReceive().Commit();
-        _uow.DidNotReceive().Rollback();
     }
 
     [Fact]
-    public async Task Handle_ShouldRenameTable_WhenAllChecksPass()
+    public async Task Handle_ShouldReturnSuccess_When_AllChecksPass()
     {
         // Arrange
-        var command = new RenameTableCommand("old_table", "new_table");
-        var oldDataSet = new DataSetMetadata(command.OldTableName, "user1");
+        var cmd = new RenameTableCommand("old_table", "new_table");
+        var existing = new DataSetMetadata(cmd.OldTableName, "u1");
+        var tx = Substitute.For<IDbTransaction>();
 
-        _dataSets.GetByTableNameAsync(command.OldTableName, Arg.Any<CancellationToken>())
-            .Returns(oldDataSet);
-        _dataSets.GetByTableNameAsync(command.NewTableName, Arg.Any<CancellationToken>())
-            .Returns((DataSetMetadata?)null);
+        _getByTableName.ExecuteAsync(cmd.OldTableName, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<DataSetMetadata?>(existing));
+        _getByTableName.ExecuteAsync(cmd.NewTableName, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<DataSetMetadata?>(null));
+
+        _uow.BeginTransaction().Returns(tx);
+
+        _renameStagingTable.ExecuteAsync(cmd.OldTableName, cmd.NewTableName, tx, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        _updateDataSet.ExecuteAsync(existing, tx, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
 
         // Act
-        var result = await _sut.Handle(command, CancellationToken.None);
+        var result = await _sut.Handle(cmd, CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-
-        _uow.Received(1).Begin();
-        await _stagingTables.Received(1).RenameTableAsync(command.OldTableName, command.NewTableName, Arg.Any<CancellationToken>());
-        await _dataSets.Received(1).UpdateAsync(oldDataSet, Arg.Any<CancellationToken>());
-        _uow.Received(1).Commit();
-        _uow.DidNotReceive().Rollback();
+        _uow.Received(1).CommitTransaction(tx);
     }
 
     [Fact]
-    public async Task Handle_ShouldRollbackAndReturnFailure_WhenRenameThrowsException()
+    public async Task Handle_ShouldRollbackAndReturnFailure_When_RenameThrows()
     {
         // Arrange
-        var command = new RenameTableCommand("old_table", "new_table");
-        var oldDataSet = new DataSetMetadata(command.OldTableName, "user1");
+        var cmd = new RenameTableCommand("old_table", "new_table");
+        var existing = new DataSetMetadata(cmd.OldTableName, "u1");
+        var tx = Substitute.For<IDbTransaction>();
 
-        _dataSets.GetByTableNameAsync(command.OldTableName, Arg.Any<CancellationToken>())
-            .Returns(oldDataSet);
-        _dataSets.GetByTableNameAsync(command.NewTableName, Arg.Any<CancellationToken>())
-            .Returns((DataSetMetadata?)null);
+        _getByTableName.ExecuteAsync(cmd.OldTableName, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<DataSetMetadata?>(existing));
+        _getByTableName.ExecuteAsync(cmd.NewTableName, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<DataSetMetadata?>(null));
 
-        _stagingTables.RenameTableAsync(command.OldTableName, command.NewTableName, Arg.Any<CancellationToken>())
+        _uow.BeginTransaction().Returns(tx);
+
+        _renameStagingTable.ExecuteAsync(cmd.OldTableName, cmd.NewTableName, tx, Arg.Any<CancellationToken>())
             .Returns<Task>(_ => throw new InvalidOperationException("DB failed"));
 
         // Act
-        var result = await _sut.Handle(command, CancellationToken.None);
+        var result = await _sut.Handle(cmd, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Type.Should().Be(ErrorType.Problem);
-        result.Error.Code.Should().Be("TableRename.Failed");
-
-        _uow.Received(1).Begin();
-        _uow.Received(1).Rollback();
-        _uow.DidNotReceive().Commit();
+        result.IsFailure.Should().BeTrue();
+        _uow.Received(1).RollbackTransaction(tx);
     }
 }

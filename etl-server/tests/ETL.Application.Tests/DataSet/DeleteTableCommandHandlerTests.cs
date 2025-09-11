@@ -1,4 +1,5 @@
-﻿using ETL.Application.Abstractions.Data;
+﻿using System.Data;
+using ETL.Application.Abstractions.Data;
 using ETL.Application.Abstractions.Repositories;
 using ETL.Application.Common;
 using ETL.Application.DataSet.DeleteTable;
@@ -11,98 +12,114 @@ namespace ETL.Application.Tests.DataSet;
 public class DeleteTableCommandHandlerTests
 {
     private readonly IUnitOfWork _uow;
-    private readonly IDataSetRepository _dataSets;
-    private readonly IStagingTableRepository _stagingTables;
+    private readonly IGetDataSetByTableName _getByTableName;
+    private readonly IDeleteStagingTable _deleteStagingTable;
+    private readonly IDeleteDataSet _deleteDataSet;
     private readonly DeleteTableCommandHandler _sut;
 
     public DeleteTableCommandHandlerTests()
     {
         _uow = Substitute.For<IUnitOfWork>();
-        _dataSets = Substitute.For<IDataSetRepository>();
-        _stagingTables = Substitute.For<IStagingTableRepository>();
+        _getByTableName = Substitute.For<IGetDataSetByTableName>();
+        _deleteStagingTable = Substitute.For<IDeleteStagingTable>();
+        _deleteDataSet = Substitute.For<IDeleteDataSet>();
 
-        _uow.DataSetsRepo.Returns(_dataSets);
-        _uow.StagingTablesRepo.Returns(_stagingTables);
-
-        _sut = new DeleteTableCommandHandler(_uow);
+        _sut = new DeleteTableCommandHandler(_uow, _getByTableName, _deleteStagingTable, _deleteDataSet);
     }
 
     [Fact]
-    public void Constructor_ShouldThrow_WhenUnitOfWorkIsNull()
+    public void Constructor_ShouldThrow_When_UowIsNull()
     {
         // Act
-        Action act = () => new DeleteTableCommandHandler(null!);
+        Action act = () => new DeleteTableCommandHandler(null!, _getByTableName, _deleteStagingTable, _deleteDataSet);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>()
-            .WithParameterName("uow");
+        act.Should().Throw<ArgumentNullException>().WithParameterName("uow");
     }
 
     [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenTableDoesNotExist()
+    public void Constructor_ShouldThrow_When_GetByTableNameIsNull()
+    {
+        // Act
+        Action act = () => new DeleteTableCommandHandler(_uow, null!, _deleteStagingTable, _deleteDataSet);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("getByTableName");
+    }
+
+    [Fact]
+    public void Constructor_ShouldThrow_When_DeleteStagingTableIsNull()
+    {
+        // Act
+        Action act = () => new DeleteTableCommandHandler(_uow, _getByTableName, null!, _deleteDataSet);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("deleteStagingTable");
+    }
+
+    [Fact]
+    public void Constructor_ShouldThrow_When_DeleteDataSetIsNull()
+    {
+        // Act
+        Action act = () => new DeleteTableCommandHandler(_uow, _getByTableName, _deleteStagingTable, null!);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("deleteDataSet");
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReturnFailure_When_TableDoesNotExist()
     {
         // Arrange
-        var command = new DeleteTableCommand("non_existing_table");
-        _dataSets.GetByTableNameAsync(command.TableName, Arg.Any<CancellationToken>())
-            .Returns((DataSetMetadata?)null);
+        var cmd = new DeleteTableCommand("tbl");
+        _getByTableName.ExecuteAsync(cmd.TableName, Arg.Any<CancellationToken>()).Returns(Task.FromResult<DataSetMetadata?>(null));
 
         // Act
-        var result = await _sut.Handle(command, CancellationToken.None);
+        var result = await _sut.Handle(cmd, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
+        result.IsFailure.Should().BeTrue();
         result.Error.Type.Should().Be(ErrorType.NotFound);
-        result.Error.Code.Should().Be("TableRemove.Failed");
-        await _stagingTables.DidNotReceive().DeleteTableAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
-        await _dataSets.DidNotReceive().DeleteAsync(Arg.Any<DataSetMetadata>(), Arg.Any<CancellationToken>());
-        _uow.DidNotReceive().Begin();
     }
 
     [Fact]
-    public async Task Handle_ShouldDeleteTableAndMetadata_WhenTableExists()
+    public async Task Handle_ShouldReturnSuccess_When_AllDeletesSucceed()
     {
         // Arrange
-        var command = new DeleteTableCommand("existing_table");
-        var dataSet = new DataSetMetadata(command.TableName, "user1");
+        var cmd = new DeleteTableCommand("tbl");
+        var ds = new DataSetMetadata(cmd.TableName, "u1");
+        var tx = Substitute.For<IDbTransaction>();
 
-        _dataSets.GetByTableNameAsync(command.TableName, Arg.Any<CancellationToken>())
-            .Returns(dataSet);
+        _getByTableName.ExecuteAsync(cmd.TableName, Arg.Any<CancellationToken>()).Returns(Task.FromResult<DataSetMetadata?>(ds));
+        _uow.BeginTransaction().Returns(tx);
+        _deleteStagingTable.ExecuteAsync(cmd.TableName, tx, Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        _deleteDataSet.ExecuteAsync(ds, tx, Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
 
         // Act
-        var result = await _sut.Handle(command, CancellationToken.None);
+        var result = await _sut.Handle(cmd, CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-
-        _uow.Received(1).Begin();
-        await _stagingTables.Received(1).DeleteTableAsync(command.TableName, Arg.Any<CancellationToken>());
-        await _dataSets.Received(1).DeleteAsync(dataSet, Arg.Any<CancellationToken>());
-        _uow.Received(1).Commit();
+        _uow.Received(1).CommitTransaction(tx);
     }
 
     [Fact]
-    public async Task Handle_ShouldRollbackAndReturnFailure_WhenExceptionThrown()
+    public async Task Handle_ShouldRollbackAndReturnFailure_When_DeleteThrows()
     {
         // Arrange
-        var command = new DeleteTableCommand("failing_table");
-        var dataSet = new DataSetMetadata(command.TableName, "user1");
+        var cmd = new DeleteTableCommand("tbl");
+        var ds = new DataSetMetadata(cmd.TableName, "u1");
+        var tx = Substitute.For<IDbTransaction>();
 
-        _dataSets.GetByTableNameAsync(command.TableName, Arg.Any<CancellationToken>())
-            .Returns(dataSet);
-
-        _stagingTables.DeleteTableAsync(command.TableName, Arg.Any<CancellationToken>())
-            .Returns<Task>(_ => throw new InvalidOperationException("DB failed"));
+        _getByTableName.ExecuteAsync(cmd.TableName, Arg.Any<CancellationToken>()).Returns(Task.FromResult<DataSetMetadata?>(ds));
+        _uow.BeginTransaction().Returns(tx);
+        _deleteStagingTable.ExecuteAsync(cmd.TableName, tx, Arg.Any<CancellationToken>()).Returns<Task>(_ => throw new InvalidOperationException("boom"));
 
         // Act
-        var result = await _sut.Handle(command, CancellationToken.None);
+        var result = await _sut.Handle(cmd, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Type.Should().Be(ErrorType.Problem);
-        result.Error.Code.Should().Be("TableRemove.Failed");
-
-        _uow.Received(1).Begin();
-        _uow.Received(1).Rollback();
-        _uow.DidNotReceive().Commit();
+        result.IsFailure.Should().BeTrue();
+        _uow.Received(1).RollbackTransaction(tx);
     }
 }

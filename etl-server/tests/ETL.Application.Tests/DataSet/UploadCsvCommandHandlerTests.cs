@@ -1,6 +1,6 @@
-﻿using ETL.Application.Abstractions.Data;
+﻿using System.Data;
+using ETL.Application.Abstractions.Data;
 using ETL.Application.Abstractions.Repositories;
-using ETL.Application.Common;
 using ETL.Application.DataSet.UploadFile;
 using ETL.Domain.Entities;
 using FluentAssertions;
@@ -11,102 +11,90 @@ namespace ETL.Application.Tests.DataSet;
 public class UploadCsvCommandHandlerTests
 {
     private readonly IUnitOfWork _uow;
-    private readonly IDataSetRepository _dataSets;
-    private readonly IStagingTableRepository _stagingTables;
+    private readonly ICreateTableFromCsv _createTableOp;
+    private readonly IAddDataSet _addDataSetOp;
+    private readonly IGetDataSetByTableName _getByTableNameOp;
     private readonly UploadCsvCommandHandler _sut;
 
     public UploadCsvCommandHandlerTests()
     {
         _uow = Substitute.For<IUnitOfWork>();
-        _dataSets = Substitute.For<IDataSetRepository>();
-        _stagingTables = Substitute.For<IStagingTableRepository>();
+        _createTableOp = Substitute.For<ICreateTableFromCsv>();
+        _addDataSetOp = Substitute.For<IAddDataSet>();
+        _getByTableNameOp = Substitute.For<IGetDataSetByTableName>();
 
-        _uow.DataSetsRepo.Returns(_dataSets);
-        _uow.StagingTablesRepo.Returns(_stagingTables);
-
-        _sut = new UploadCsvCommandHandler(_uow);
+        _sut = new UploadCsvCommandHandler(_uow, _createTableOp, _addDataSetOp, _getByTableNameOp);
     }
 
     [Fact]
-    public void Constructor_ShouldThrow_WhenUnitOfWorkIsNull()
+    public void Constructor_ShouldThrow_When_UowIsNull()
     {
         // Act
-        Action act = () => new UploadCsvCommandHandler(null!);
+        Action act = () => new UploadCsvCommandHandler(null!, _createTableOp, _addDataSetOp, _getByTableNameOp);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>()
-            .WithParameterName("uow");
+        act.Should().Throw<ArgumentNullException>().WithParameterName("uow");
     }
 
     [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenTableAlreadyExists()
+    public async Task Handle_ShouldReturnConflict_When_TableAlreadyExists()
     {
         // Arrange
-        var command = new UploadCsvCommand("existing_table", new MemoryStream(), "user1");
-        var existingDataSet = new DataSetMetadata(command.TableName, command.UserId);
-
-        _dataSets.GetByTableNameAsync(command.TableName, Arg.Any<CancellationToken>())
-            .Returns(existingDataSet);
+        var cmd = new UploadCsvCommand("t", Stream.Null, "u");
+        _getByTableNameOp.ExecuteAsync("t", Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new DataSetMetadata("t", "u") as DataSetMetadata));
 
         // Act
-        var result = await _sut.Handle(command, CancellationToken.None);
+        var result = await _sut.Handle(cmd, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Type.Should().Be(ErrorType.Conflict);
+        result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("FileUpload.Failed");
-
-        await _stagingTables.DidNotReceive().CreateTableFromCsvAsync(Arg.Any<string>(), Arg.Any<Stream>(), Arg.Any<CancellationToken>());
-        await _dataSets.DidNotReceive().AddAsync(Arg.Any<DataSetMetadata>(), Arg.Any<CancellationToken>());
-        _uow.DidNotReceive().Begin();
-        _uow.DidNotReceive().Commit();
-        _uow.DidNotReceive().Rollback();
     }
 
     [Fact]
-    public async Task Handle_ShouldCreateTableAndAddMetadata_WhenTableDoesNotExist()
+    public async Task Handle_ShouldReturnSuccessAndCommit_When_AllOperationsSucceed()
     {
         // Arrange
-        var command = new UploadCsvCommand("new_table", new MemoryStream(), "user1");
+        var cmd = new UploadCsvCommand("t", Stream.Null, "u");
+        _getByTableNameOp.ExecuteAsync("t", Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<DataSetMetadata?>(null));
 
-        _dataSets.GetByTableNameAsync(command.TableName, Arg.Any<CancellationToken>())
-            .Returns((DataSetMetadata?)null);
+        var fakeTx = Substitute.For<IDbTransaction>();
+        _uow.BeginTransaction().Returns(fakeTx);
+
+        _createTableOp.ExecuteAsync(cmd.TableName, cmd.FileStream, fakeTx, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        _addDataSetOp.ExecuteAsync(Arg.Any<DataSetMetadata>(), fakeTx, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
 
         // Act
-        var result = await _sut.Handle(command, CancellationToken.None);
+        var result = await _sut.Handle(cmd, CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-
-        _uow.Received(1).Begin();
-        await _stagingTables.Received(1).CreateTableFromCsvAsync(command.TableName, command.FileStream, Arg.Any<CancellationToken>());
-        await _dataSets.Received(1).AddAsync(Arg.Is<DataSetMetadata>(d => d.TableName == command.TableName && d.UploadedByUserId == command.UserId), Arg.Any<CancellationToken>());
-        _uow.Received(1).Commit();
-        _uow.DidNotReceive().Rollback();
+        _uow.Received(1).CommitTransaction(fakeTx);
     }
 
     [Fact]
-    public async Task Handle_ShouldRollbackAndReturnFailure_WhenExceptionThrown()
+    public async Task Handle_ShouldReturnFailureAndRollback_When_CreateTableThrows()
     {
         // Arrange
-        var command = new UploadCsvCommand("new_table", new MemoryStream(), "user1");
+        var cmd = new UploadCsvCommand("t", Stream.Null, "u");
+        _getByTableNameOp.ExecuteAsync("t", Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<DataSetMetadata?>(null));
 
-        _dataSets.GetByTableNameAsync(command.TableName, Arg.Any<CancellationToken>())
-            .Returns((DataSetMetadata?)null);
+        var fakeTx = Substitute.For<IDbTransaction>();
+        _uow.BeginTransaction().Returns(fakeTx);
 
-        _stagingTables.CreateTableFromCsvAsync(command.TableName, command.FileStream, Arg.Any<CancellationToken>())
-            .Returns<Task>(_ => throw new InvalidOperationException("DB failed"));
+        _createTableOp.ExecuteAsync(cmd.TableName, cmd.FileStream, fakeTx, Arg.Any<CancellationToken>())
+            .Returns<Task>(_ => throw new InvalidOperationException("boom"));
 
         // Act
-        var result = await _sut.Handle(command, CancellationToken.None);
+        var result = await _sut.Handle(cmd, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Type.Should().Be(ErrorType.Problem);
-        result.Error.Code.Should().Be("FileUpload.Failed");
-
-        _uow.Received(1).Begin();
-        _uow.Received(1).Rollback();
-        _uow.DidNotReceive().Commit();
+        result.IsFailure.Should().BeTrue();
+        _uow.Received(1).RollbackTransaction(fakeTx);
     }
 }

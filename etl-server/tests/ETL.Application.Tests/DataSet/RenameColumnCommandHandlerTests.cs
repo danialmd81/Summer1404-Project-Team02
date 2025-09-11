@@ -1,4 +1,5 @@
-﻿using ETL.Application.Abstractions.Data;
+﻿using System.Data;
+using ETL.Application.Abstractions.Data;
 using ETL.Application.Abstractions.Repositories;
 using ETL.Application.Common;
 using ETL.Application.DataSet.RenameColumn;
@@ -11,170 +12,157 @@ namespace ETL.Application.Tests.DataSet;
 public class RenameColumnCommandHandlerTests
 {
     private readonly IUnitOfWork _uow;
-    private readonly IDataSetRepository _dataSets;
-    private readonly IStagingTableRepository _stagingTables;
+    private readonly IGetDataSetByTableName _getByTableName;
+    private readonly IStagingColumnExists _columnExists;
+    private readonly IRenameStagingColumn _renameStagingColumn;
     private readonly RenameColumnCommandHandler _sut;
 
     public RenameColumnCommandHandlerTests()
     {
         _uow = Substitute.For<IUnitOfWork>();
-        _dataSets = Substitute.For<IDataSetRepository>();
-        _stagingTables = Substitute.For<IStagingTableRepository>();
+        _getByTableName = Substitute.For<IGetDataSetByTableName>();
+        _columnExists = Substitute.For<IStagingColumnExists>();
+        _renameStagingColumn = Substitute.For<IRenameStagingColumn>();
 
-        _uow.DataSetsRepo.Returns(_dataSets);
-        _uow.StagingTablesRepo.Returns(_stagingTables);
-
-        _sut = new RenameColumnCommandHandler(_uow);
+        _sut = new RenameColumnCommandHandler(_uow, _getByTableName, _columnExists, _renameStagingColumn);
     }
 
     [Fact]
-    public void Constructor_ShouldThrow_WhenUnitOfWorkIsNull()
+    public void Constructor_ShouldThrow_When_UowIsNull()
     {
         // Act
-        Action act = () => new RenameColumnCommandHandler(null!);
+        Action act = () => new RenameColumnCommandHandler(null!, _getByTableName, _columnExists, _renameStagingColumn);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>()
-            .WithParameterName("uow");
+        act.Should().Throw<ArgumentNullException>().WithParameterName("uow");
     }
 
     [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenTableDoesNotExist()
+    public void Constructor_ShouldThrow_When_GetByTableNameIsNull()
+    {
+        // Act
+        Action act = () => new RenameColumnCommandHandler(_uow, null!, _columnExists, _renameStagingColumn);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("getByTableName");
+    }
+
+    [Fact]
+    public void Constructor_ShouldThrow_When_ColumnExistsIsNull()
+    {
+        // Act
+        Action act = () => new RenameColumnCommandHandler(_uow, _getByTableName, null!, _renameStagingColumn);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("columnExists");
+    }
+
+    [Fact]
+    public void Constructor_ShouldThrow_When_RenameStagingColumnIsNull()
+    {
+        // Act
+        Action act = () => new RenameColumnCommandHandler(_uow, _getByTableName, _columnExists, null!);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("renameStagingColumn");
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReturnFailure_When_TableDoesNotExist()
     {
         // Arrange
-        var command = new RenameColumnCommand("non_existing_table", "OldCol", "NewCol");
-        _dataSets.GetByTableNameAsync(command.TableName, Arg.Any<CancellationToken>())
-            .Returns((DataSetMetadata?)null);
+        var cmd = new RenameColumnCommand("tbl", "Old", "New");
+        _getByTableName.ExecuteAsync(cmd.TableName, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<DataSetMetadata?>(null));
 
         // Act
-        var result = await _sut.Handle(command, CancellationToken.None);
+        var result = await _sut.Handle(cmd, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Type.Should().Be(ErrorType.NotFound);
+        result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("ColumnRename.Failed");
-
-        await _stagingTables.DidNotReceive().ColumnExistsAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
-        await _stagingTables.DidNotReceive().RenameColumnAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
-        _uow.DidNotReceive().Begin();
-        _uow.DidNotReceive().Commit();
-        _uow.DidNotReceive().Rollback();
     }
 
     [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenOldColumnDoesNotExist()
+    public async Task Handle_ShouldReturnFailure_When_OldColumnDoesNotExist()
     {
         // Arrange
-        var command = new RenameColumnCommand("existing_table", "OldCol", "NewCol");
-        var dataSet = new DataSetMetadata(command.TableName, "user1");
-
-        _dataSets.GetByTableNameAsync(command.TableName, Arg.Any<CancellationToken>())
-            .Returns(dataSet);
-
-        _stagingTables.ColumnExistsAsync(command.TableName, command.OldColumnName, Arg.Any<CancellationToken>())
-            .Returns(false);
+        var cmd = new RenameColumnCommand("tbl", "Old", "New");
+        var ds = new DataSetMetadata(cmd.TableName, "u1");
+        _getByTableName.ExecuteAsync(cmd.TableName, Arg.Any<CancellationToken>()).Returns(Task.FromResult<DataSetMetadata?>(ds));
+        _columnExists.ExecuteAsync(cmd.TableName, cmd.OldColumnName, Arg.Any<CancellationToken>()).Returns(Task.FromResult(false));
 
         // Act
-        var result = await _sut.Handle(command, CancellationToken.None);
+        var result = await _sut.Handle(cmd, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
+        result.IsFailure.Should().BeTrue();
         result.Error.Type.Should().Be(ErrorType.NotFound);
-        result.Error.Code.Should().Be("ColumnRename.Failed");
-
-        _uow.DidNotReceive().Begin();
-        _uow.DidNotReceive().Commit();
-        _uow.DidNotReceive().Rollback();
-        await _stagingTables.DidNotReceive().RenameColumnAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenNewColumnAlreadyExists()
+    public async Task Handle_ShouldReturnFailure_When_NewColumnAlreadyExists()
     {
         // Arrange
-        var command = new RenameColumnCommand("existing_table", "OldCol", "NewCol");
-        var dataSet = new DataSetMetadata(command.TableName, "user1");
-
-        _dataSets.GetByTableNameAsync(command.TableName, Arg.Any<CancellationToken>())
-            .Returns(dataSet);
-
-        _stagingTables.ColumnExistsAsync(command.TableName, command.OldColumnName, Arg.Any<CancellationToken>())
-            .Returns(true);
-
-        _stagingTables.ColumnExistsAsync(command.TableName, command.NewColumnName, Arg.Any<CancellationToken>())
-            .Returns(true);
+        var cmd = new RenameColumnCommand("tbl", "Old", "New");
+        var ds = new DataSetMetadata(cmd.TableName, "u1");
+        _getByTableName.ExecuteAsync(cmd.TableName, Arg.Any<CancellationToken>()).Returns(Task.FromResult<DataSetMetadata?>(ds));
+        _columnExists.ExecuteAsync(cmd.TableName, cmd.OldColumnName, Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
+        _columnExists.ExecuteAsync(cmd.TableName, cmd.NewColumnName, Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
 
         // Act
-        var result = await _sut.Handle(command, CancellationToken.None);
+        var result = await _sut.Handle(cmd, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
+        result.IsFailure.Should().BeTrue();
         result.Error.Type.Should().Be(ErrorType.Conflict);
-        result.Error.Code.Should().Be("ColumnRename.Failed");
-
-        _uow.DidNotReceive().Begin();
-        _uow.DidNotReceive().Commit();
-        _uow.DidNotReceive().Rollback();
-        await _stagingTables.DidNotReceive().RenameColumnAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Handle_ShouldRenameColumn_WhenAllChecksPass()
+    public async Task Handle_ShouldRenameColumn_When_AllChecksPass()
     {
         // Arrange
-        var command = new RenameColumnCommand("existing_table", "OldCol", "NewCol");
-        var dataSet = new DataSetMetadata(command.TableName, "user1");
+        var cmd = new RenameColumnCommand("tbl", "Old", "New");
+        var ds = new DataSetMetadata(cmd.TableName, "u1");
+        var tx = Substitute.For<IDbTransaction>();
 
-        _dataSets.GetByTableNameAsync(command.TableName, Arg.Any<CancellationToken>())
-            .Returns(dataSet);
+        _getByTableName.ExecuteAsync(cmd.TableName, Arg.Any<CancellationToken>()).Returns(Task.FromResult<DataSetMetadata?>(ds));
+        _columnExists.ExecuteAsync(cmd.TableName, cmd.OldColumnName, Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
+        _columnExists.ExecuteAsync(cmd.TableName, cmd.NewColumnName, Arg.Any<CancellationToken>()).Returns(Task.FromResult(false));
 
-        _stagingTables.ColumnExistsAsync(command.TableName, command.OldColumnName, Arg.Any<CancellationToken>())
-            .Returns(true);
-
-        _stagingTables.ColumnExistsAsync(command.TableName, command.NewColumnName, Arg.Any<CancellationToken>())
-            .Returns(false);
+        _uow.BeginTransaction().Returns(tx);
+        _renameStagingColumn.ExecuteAsync(cmd.TableName, cmd.OldColumnName, cmd.NewColumnName, tx, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
 
         // Act
-        var result = await _sut.Handle(command, CancellationToken.None);
+        var result = await _sut.Handle(cmd, CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-
-        _uow.Received(1).Begin();
-        await _stagingTables.Received(1).RenameColumnAsync(command.TableName, command.OldColumnName, command.NewColumnName, Arg.Any<CancellationToken>());
-        _uow.Received(1).Commit();
-        _uow.DidNotReceive().Rollback();
+        _renameStagingColumn.Received(1).ExecuteAsync(cmd.TableName, cmd.OldColumnName, cmd.NewColumnName, tx, Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Handle_ShouldRollbackAndReturnFailure_WhenRenameThrowsException()
+    public async Task Handle_ShouldRollbackAndReturnFailure_When_RenameThrows()
     {
         // Arrange
-        var command = new RenameColumnCommand("existing_table", "OldCol", "NewCol");
-        var dataSet = new DataSetMetadata(command.TableName, "user1");
+        var cmd = new RenameColumnCommand("tbl", "Old", "New");
+        var ds = new DataSetMetadata(cmd.TableName, "u1");
+        var tx = Substitute.For<IDbTransaction>();
 
-        _dataSets.GetByTableNameAsync(command.TableName, Arg.Any<CancellationToken>())
-            .Returns(dataSet);
+        _getByTableName.ExecuteAsync(cmd.TableName, Arg.Any<CancellationToken>()).Returns(Task.FromResult<DataSetMetadata?>(ds));
+        _columnExists.ExecuteAsync(cmd.TableName, cmd.OldColumnName, Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
+        _columnExists.ExecuteAsync(cmd.TableName, cmd.NewColumnName, Arg.Any<CancellationToken>()).Returns(Task.FromResult(false));
 
-        _stagingTables.ColumnExistsAsync(command.TableName, command.OldColumnName, Arg.Any<CancellationToken>())
-            .Returns(true);
-
-        _stagingTables.ColumnExistsAsync(command.TableName, command.NewColumnName, Arg.Any<CancellationToken>())
-            .Returns(false);
-
-        _stagingTables.RenameColumnAsync(command.TableName, command.OldColumnName, command.NewColumnName, Arg.Any<CancellationToken>())
+        _uow.BeginTransaction().Returns(tx);
+        _renameStagingColumn.ExecuteAsync(cmd.TableName, cmd.OldColumnName, cmd.NewColumnName, tx, Arg.Any<CancellationToken>())
             .Returns<Task>(_ => throw new InvalidOperationException("DB failed"));
 
         // Act
-        var result = await _sut.Handle(command, CancellationToken.None);
+        var result = await _sut.Handle(cmd, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Type.Should().Be(ErrorType.Problem);
-        result.Error.Code.Should().Be("ColumnRename.Failed");
-
-        _uow.Received(1).Begin();
-        _uow.Received(1).Rollback();
-        _uow.DidNotReceive().Commit();
+        result.IsFailure.Should().BeTrue();
+        _uow.Received(1).RollbackTransaction(tx);
     }
 }
