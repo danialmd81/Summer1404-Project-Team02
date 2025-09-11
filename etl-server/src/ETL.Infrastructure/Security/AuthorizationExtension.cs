@@ -27,6 +27,24 @@ public static class AuthorizationExtension
 
             options.AddPolicy(Policy.CanReadRoles, policy =>
                 policy.RequireRole(Role.SystemAdmin));
+
+            options.AddPolicy(Policy.CanUploadFile, policy =>
+                policy.RequireRole(Role.SystemAdmin, Role.DataAdmin));
+
+            options.AddPolicy(Policy.CanReadAllDataSets, policy =>
+                policy.RequireRole(Role.SystemAdmin, Role.DataAdmin, Role.Analyst));
+
+            options.AddPolicy(Policy.CanRenameTable, policy =>
+                policy.RequireRole(Role.SystemAdmin, Role.DataAdmin));
+
+            options.AddPolicy(Policy.CanRenameColumn, policy =>
+                policy.RequireRole(Role.SystemAdmin, Role.DataAdmin));
+
+            options.AddPolicy(Policy.CanDeleteTable, policy =>
+                policy.RequireRole(Role.SystemAdmin, Role.DataAdmin));
+
+            options.AddPolicy(Policy.CanDeleteColumn, policy =>
+                policy.RequireRole(Role.SystemAdmin, Role.DataAdmin));
         });
 
         return services;

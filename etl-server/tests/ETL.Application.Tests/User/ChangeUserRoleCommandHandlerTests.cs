@@ -1,30 +1,53 @@
-﻿using ETL.Application.Abstractions.UserServices;
-using ETL.Application.Common;
+﻿using System.Net;
+using ETL.Application.Abstractions.UserServices;
 using ETL.Application.User.ChangeRole;
 using FluentAssertions;
 using NSubstitute;
-using NSubstitute.ExceptionExtensions;
 
 namespace ETL.Application.Tests.User;
 
 public class ChangeUserRoleCommandHandlerTests
 {
-    private readonly IOAuthUserRoleChanger _roleChanger;
+    private readonly IOAuthRoleRemover _roleRemover;
+    private readonly IOAuthRoleAssigner _roleAssigner;
     private readonly ChangeUserRoleCommandHandler _sut;
 
     public ChangeUserRoleCommandHandlerTests()
     {
-        _roleChanger = Substitute.For<IOAuthUserRoleChanger>();
-        _sut = new ChangeUserRoleCommandHandler(_roleChanger);
+        _roleRemover = Substitute.For<IOAuthRoleRemover>();
+        _roleAssigner = Substitute.For<IOAuthRoleAssigner>();
+        _sut = new ChangeUserRoleCommandHandler(_roleRemover, _roleAssigner);
     }
 
     [Fact]
-    public async Task Handle_ShouldReturnSuccess_WhenRoleChangeSucceeds()
+    public void Constructor_ShouldThrow_When_RoleRemoverIsNull()
+    {
+        // Act
+        Action act = () => new ChangeUserRoleCommandHandler(null!, _roleAssigner);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("roleRemover");
+    }
+
+    [Fact]
+    public void Constructor_ShouldThrow_When_RoleAssignerIsNull()
+    {
+        // Act
+        Action act = () => new ChangeUserRoleCommandHandler(_roleRemover, null!);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("roleAssigner");
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReturnSuccess_When_RoleChangeSucceeds()
     {
         // Arrange
         var command = new ChangeUserRoleCommand("user123", "Admin");
-        _roleChanger.ChangeRoleAsync(command.UserId, command.Role, Arg.Any<CancellationToken>())
-            .Returns(Result.Success());
+        _roleRemover.RemoveAllRealmRolesAsync(command.UserId, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        _roleAssigner.AssignRoleAsync(command.UserId, command.Role, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
 
         // Act
         var result = await _sut.Handle(command, CancellationToken.None);
@@ -34,47 +57,36 @@ public class ChangeUserRoleCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenRoleChangeFails()
+    public async Task Handle_ShouldReturnNotFoundFailure_When_RemoverThrowsNotFoundHttpRequestException()
     {
         // Arrange
         var command = new ChangeUserRoleCommand("user123", "Admin");
-        var error = Error.Failure("Role.Failed", "Unable to change role");
-        _roleChanger.ChangeRoleAsync(command.UserId, command.Role, Arg.Any<CancellationToken>())
-            .Returns(Result.Failure(error));
+        _roleRemover.RemoveAllRealmRolesAsync(command.UserId, Arg.Any<CancellationToken>())
+            .Returns<Task>(_ => throw new HttpRequestException("not found", null, HttpStatusCode.NotFound));
 
         // Act
         var result = await _sut.Handle(command, CancellationToken.None);
 
         // Assert
         result.IsFailure.Should().BeTrue();
-        result.Error.Should().Be(error);
+        result.Error.Code.Should().Be("OAuth.NotFound");
     }
 
     [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenExceptionIsThrown()
+    public async Task Handle_ShouldReturnProblemFailure_When_AssignerThrowsException()
     {
         // Arrange
         var command = new ChangeUserRoleCommand("user123", "Admin");
-        _roleChanger.ChangeRoleAsync(command.UserId, command.Role, Arg.Any<CancellationToken>())
-            .Throws(new InvalidOperationException("something went wrong"));
+        _roleRemover.RemoveAllRealmRolesAsync(command.UserId, Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        _roleAssigner.AssignRoleAsync(command.UserId, command.Role, Arg.Any<CancellationToken>())
+            .Returns<Task>(_ => throw new Exception("boom"));
 
         // Act
         var result = await _sut.Handle(command, CancellationToken.None);
 
         // Assert
         result.IsFailure.Should().BeTrue();
-        result.Error.Code.Should().Be("User.ChangeRole.Failed");
-        result.Error.Description.Should().Contain("something went wrong");
-    }
-
-    [Fact]
-    public void Constructor_ShouldThrow_WhenRoleChangerIsNull()
-    {
-        // Act
-        Action act = () => new ChangeUserRoleCommandHandler(null!);
-
-        // Assert
-        act.Should().Throw<ArgumentNullException>()
-            .WithParameterName("roleChanger");
+        result.Error.Code.Should().Be("User.ChangeRole.Exception");
     }
 }

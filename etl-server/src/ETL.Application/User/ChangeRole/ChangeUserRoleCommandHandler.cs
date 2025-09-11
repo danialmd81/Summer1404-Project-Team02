@@ -1,28 +1,40 @@
-﻿using ETL.Application.Abstractions.UserServices;
+﻿using System.Net;
+using ETL.Application.Abstractions.UserServices;
 using ETL.Application.Common;
 using MediatR;
 
 namespace ETL.Application.User.ChangeRole;
 
-public class ChangeUserRoleCommandHandler : IRequestHandler<ChangeUserRoleCommand, Result>
-{
-    private readonly IOAuthUserRoleChanger _roleChanger;
+public record ChangeUserRoleCommand(string UserId, string Role) : IRequest<Result>;
 
-    public ChangeUserRoleCommandHandler(IOAuthUserRoleChanger roleChanger)
+public sealed class ChangeUserRoleCommandHandler : IRequestHandler<ChangeUserRoleCommand, Result>
+{
+    private readonly IOAuthRoleRemover _roleRemover;
+    private readonly IOAuthRoleAssigner _roleAssigner;
+
+    public ChangeUserRoleCommandHandler(IOAuthRoleRemover roleRemover, IOAuthRoleAssigner roleAssigner)
     {
-        _roleChanger = roleChanger ?? throw new ArgumentNullException(nameof(roleChanger));
+        _roleRemover = roleRemover ?? throw new ArgumentNullException(nameof(roleRemover));
+        _roleAssigner = roleAssigner ?? throw new ArgumentNullException(nameof(roleAssigner));
     }
 
     public async Task<Result> Handle(ChangeUserRoleCommand request, CancellationToken cancellationToken)
     {
         try
         {
-            var result = await _roleChanger.ChangeRoleAsync(request.UserId, request.Role, cancellationToken);
-            return result;
+            await _roleRemover.RemoveAllRealmRolesAsync(request.UserId, cancellationToken);
+
+            await _roleAssigner.AssignRoleAsync(request.UserId, request.Role, cancellationToken);
+
+            return Result.Success();
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Result.Failure(Error.NotFound("OAuth.NotFound", ex.Message));
         }
         catch (Exception ex)
         {
-            return Result.Failure(Error.Problem("User.ChangeRole.Failed", ex.Message));
+            return Result.Failure(Error.Problem("User.ChangeRole.Exception", ex.Message));
         }
     }
 }

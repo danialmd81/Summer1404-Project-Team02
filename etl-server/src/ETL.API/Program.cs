@@ -1,19 +1,20 @@
 using ETL.API.Infrastructure;
 using ETL.Application;
 using ETL.Infrastructure;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddOpenApi();
 builder.Services.AddLogging();
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Angular", policy =>
     {
-        policy.WithOrigins("http://localhost:4200")
+        policy.WithOrigins(builder.Configuration["Authentication:RedirectUri"])
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -21,7 +22,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services
-    .AddApplication()
+    .AddApplication(builder.Configuration)
     .AddInfrastructure(builder.Configuration);
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -31,8 +32,13 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();
+    app.MapScalarApiReference(option =>
+    {
+        option
+        .WithTitle("Fluxa")
+        .WithTheme(ScalarTheme.Default);
+    });
 }
 
 app.UseExceptionHandler();

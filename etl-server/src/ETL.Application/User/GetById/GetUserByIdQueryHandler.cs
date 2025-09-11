@@ -1,11 +1,14 @@
-﻿using ETL.Application.Abstractions.UserServices;
+﻿using System.Net;
+using ETL.Application.Abstractions.UserServices;
 using ETL.Application.Common;
 using ETL.Application.Common.DTOs;
 using MediatR;
 
 namespace ETL.Application.User.GetById;
 
-public class GetUserByIdQueryHandler : IRequestHandler<GetUserByIdQuery, Result<UserDto>>
+public record GetUserByIdQuery(string UserId) : IRequest<Result<UserDto>>;
+
+public sealed class GetUserByIdQueryHandler : IRequestHandler<GetUserByIdQuery, Result<UserDto>>
 {
     private readonly IOAuthUserReader _userReader;
     private readonly IOAuthUserRoleGetter _roleGetter;
@@ -18,23 +21,29 @@ public class GetUserByIdQueryHandler : IRequestHandler<GetUserByIdQuery, Result<
 
     public async Task<Result<UserDto>> Handle(GetUserByIdQuery request, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.UserId))
-            return Result.Failure<UserDto>(Error.NotFound("User.InvalidId", "User id is required."));
+        UserDto user;
+        try
+        {
+            user = await _userReader.GetByIdAsync(request.UserId, cancellationToken);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Result.Failure<UserDto>(Error.NotFound("User.NotFound", $"User '{request.UserId}' was not found."));
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure<UserDto>(Error.Problem("User.GetById.Unexpected", ex.Message));
+        }
 
-        var userResult = await _userReader.GetByIdAsync(request.UserId, cancellationToken);
-        if (userResult.IsFailure)
-            return userResult;
-
-        var user = userResult.Value;
-
-
-        var roleResult = await _roleGetter.GetRoleForUserAsync(request.UserId, cancellationToken);
-        if (roleResult.IsFailure)
-            return Result.Failure<UserDto>(roleResult.Error);
-
-        var role = roleResult.Value;
-
-        user.Role = role;
+        try
+        {
+            var role = await _roleGetter.GetRoleForUserAsync(request.UserId, cancellationToken);
+            user.Role = role;
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure<UserDto>(Error.Problem("User.GetById.Exception", ex.Message));
+        }
 
         return Result.Success(user);
     }

@@ -1,25 +1,26 @@
 ﻿using ETL.Application.Abstractions.Security;
-using Microsoft.Extensions.Configuration;
+using ETL.Application.Common.Options;
+using Microsoft.Extensions.Options;
 
 namespace ETL.Infrastructure.Security;
 
 public class AuthCredentialValidator : IAuthCredentialValidator
 {
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly IConfiguration _configuration;
+    private readonly AuthOptions _authOptions;
 
-    public AuthCredentialValidator(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+    public AuthCredentialValidator(IHttpClientFactory httpClientFactory, IOptions<AuthOptions> options)
     {
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));;
+        _authOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 
     public async Task<bool> ValidateCredentialsAsync(string username, string password, CancellationToken ct = default)
     {
         var httpClient = _httpClientFactory.CreateClient();
-        var tokenEndpoint = $"{_configuration["Authentication:Authority"]}/protocol/openid-connect/token";
-        var clientId = _configuration["Authentication:ClientId"];
-        var clientSecret = _configuration["Authentication:ClientSecret"];
+        var tokenEndpoint = $"{_authOptions.Authority}/protocol/openid-connect/token";
+        var clientId = _authOptions.ClientId;
+        var clientSecret = _authOptions.ClientSecret;
 
         var body = new Dictionary<string, string>
         {

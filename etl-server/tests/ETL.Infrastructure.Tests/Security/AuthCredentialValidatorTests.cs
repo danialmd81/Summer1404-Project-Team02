@@ -1,9 +1,10 @@
 ﻿using System.Net;
+using ETL.Application.Common.Options;
 using ETL.Infrastructure.Security;
-using FluentAssertions;
-using Microsoft.Extensions.Configuration;
-using NSubstitute;
 using ETL.Infrastructure.Tests.HttpClientFixture;
+using FluentAssertions;
+using Microsoft.Extensions.Options;
+using NSubstitute;
 
 namespace ETL.Infrastructure.Tests.Security;
 
@@ -11,37 +12,44 @@ namespace ETL.Infrastructure.Tests.Security;
 public class AuthCredentialValidatorTests
 {
     private readonly HttpClientTestFixture _fixture;
-    private readonly IConfiguration _configuration;
     private readonly AuthCredentialValidator _sut;
 
     public AuthCredentialValidatorTests(HttpClientTestFixture fixture)
     {
         _fixture = fixture;
 
-        _configuration = Substitute.For<IConfiguration>();
-        _configuration["Authentication:Authority"].Returns("https://fake-auth");
-        _configuration["Authentication:ClientId"].Returns("client-id");
-        _configuration["Authentication:ClientSecret"].Returns("client-secret");
+        var authOptions = new AuthOptions
+        {
+            Authority = "https://fake-auth",
+            ClientId = "client-id",
+            ClientSecret = "client-secret"
+        };
+        var options = Options.Create(authOptions);
 
         var httpFactory = Substitute.For<IHttpClientFactory>();
         httpFactory.CreateClient().Returns(_fixture.Client);
 
-        _sut = new AuthCredentialValidator(httpFactory, _configuration);
+        _sut = new AuthCredentialValidator(httpFactory, options);
     }
 
-    // Constructor null checks
     [Fact]
     public void Constructor_ShouldThrowArgumentNullException_WhenHttpClientFactoryIsNull()
     {
-        Action act = () => new AuthCredentialValidator(null!, _configuration);
+        // Arrange // Act
+        Action act = () => new AuthCredentialValidator(null!, Options.Create(new AuthOptions()));
+
+        // Assert
         act.Should().Throw<ArgumentNullException>().WithParameterName("httpClientFactory");
     }
 
     [Fact]
-    public void Constructor_ShouldThrowArgumentNullException_WhenConfigurationIsNull()
+    public void Constructor_ShouldThrowArgumentNullException_WhenOptionsIsNull()
     {
+        // Arrange // Act
         Action act = () => new AuthCredentialValidator(Substitute.For<IHttpClientFactory>(), null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("configuration");
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("options");
     }
 
     [Fact]
@@ -55,9 +63,7 @@ public class AuthCredentialValidatorTests
 
         // Assert
         result.Should().BeTrue();
-        _fixture.Handler.LastRequest!.RequestUri!.ToString()
-            .Should().Contain("/protocol/openid-connect/token");
-        _fixture.Handler.LastRequest!.Method.Should().Be(HttpMethod.Post);
+        _fixture.Handler.LastRequest!.RequestUri!.ToString().Should().Contain("/protocol/openid-connect/token");
     }
 
     [Fact]

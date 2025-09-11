@@ -1,11 +1,14 @@
-﻿using ETL.Application.Abstractions.UserServices;
+﻿using System.Net;
+using ETL.Application.Abstractions.UserServices;
 using ETL.Application.Common;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
 namespace ETL.Application.User.Delete;
 
-public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Result>
+public record DeleteUserCommand(string UserId) : IRequest<Result>;
+
+public sealed class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Result>
 {
     private readonly IOAuthUserDeleter _userDeleter;
 
@@ -16,16 +19,18 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Resul
 
     public async Task<Result> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.UserId))
-            return Result.Failure(Error.Failure("User.Delete.InvalidId", "User id is required"));
-
-        var result = await _userDeleter.DeleteUserAsync(request.UserId, cancellationToken);
-
-        if (result.IsFailure)
+        try
         {
-            return Result.Failure(Error.Failure("User.Delete", $"Failed to delete user {request.UserId} via OAuth: {result.Error.Code} - {result.Error.Description}"));
+            await _userDeleter.DeleteUserAsync(request.UserId, cancellationToken);
+            return Result.Success();
         }
-
-        return Result.Success();
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Result.Failure(Error.NotFound("OAuth.UserNotFound", $"User '{request.UserId}' not found."));
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure(Error.Problem("User.Delete.Failed", ex.Message));
+        }
     }
 }

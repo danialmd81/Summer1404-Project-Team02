@@ -1,26 +1,26 @@
 ﻿using ETL.Application.Abstractions.Security;
-using ETL.Application.Common;
-using Microsoft.Extensions.Configuration;
+using ETL.Application.Common.Options;
+using Microsoft.Extensions.Options;
 
 namespace ETL.Infrastructure.Security;
 
 public class AuthLogoutService : IAuthLogoutService
 {
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly IConfiguration _configuration;
+    private readonly AuthOptions _authOptions;
 
-    public AuthLogoutService(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+    public AuthLogoutService(IHttpClientFactory httpClientFactory, IOptions<AuthOptions> options)
     {
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration)); ;
+        _authOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 
-    public async Task<Result> LogoutAsync(string? accessToken, string? refreshToken, CancellationToken ct = default)
+    public async Task LogoutAsync(string? accessToken, string? refreshToken, CancellationToken ct = default)
     {
         var httpClient = _httpClientFactory.CreateClient();
-        var logoutEndpoint = $"{_configuration["Authentication:Authority"]}/protocol/openid-connect/logout";
-        var clientId = _configuration["Authentication:ClientId"];
-        var clientSecret = _configuration["Authentication:ClientSecret"];
+        var logoutEndpoint = $"{_authOptions.Authority}/protocol/openid-connect/logout";
+        var clientId = _authOptions.ClientId;
+        var clientSecret = _authOptions.ClientSecret;
 
         var logoutData = new Dictionary<string, string>
         {
@@ -40,9 +40,7 @@ public class AuthLogoutService : IAuthLogoutService
         if (!response.IsSuccessStatusCode)
         {
             var err = await response.Content.ReadAsStringAsync(ct);
-            return Result.Failure(Error.Failure("OAuth.LogoutFailed", $"Logout failed: {err}"));
+            throw new InvalidOperationException($"Logout failed: {err}");
         }
-
-        return Result.Success();
     }
 }

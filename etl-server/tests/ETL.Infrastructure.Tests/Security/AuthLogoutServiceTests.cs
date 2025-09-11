@@ -1,94 +1,95 @@
 ﻿using System.Net;
+using ETL.Application.Common.Options;
 using ETL.Infrastructure.Security;
 using ETL.Infrastructure.Tests.HttpClientFixture;
 using FluentAssertions;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 
-namespace ETL.Infrastructure.Tests.Security
+namespace ETL.Infrastructure.Tests.Security;
+
+[Collection("HttpClient collection")]
+public class AuthLogoutServiceTests
 {
-    [Collection("HttpClient collection")]
-    public class AuthLogoutServiceTests
+    private readonly HttpClientTestFixture _fixture;
+    private readonly AuthLogoutService _sut;
+
+    public AuthLogoutServiceTests(HttpClientTestFixture fixture)
     {
-        private readonly HttpClientTestFixture _fixture;
-        private readonly IConfiguration _configuration;
-        private readonly AuthLogoutService _sut;
+        _fixture = fixture;
 
-        public AuthLogoutServiceTests(HttpClientTestFixture fixture)
+        var authOptions = new AuthOptions
         {
-            _fixture = fixture;
+            Authority = "https://fake-auth",
+            ClientId = "client-id",
+            ClientSecret = "client-secret",
+            RedirectUri = "https://ignored"
+        };
+        var options = Options.Create(authOptions);
 
-            _configuration = Substitute.For<IConfiguration>();
-            _configuration["Authentication:Authority"].Returns("https://fake-auth");
-            _configuration["Authentication:ClientId"].Returns("client-id");
-            _configuration["Authentication:ClientSecret"].Returns("client-secret");
+        var httpFactory = Substitute.For<IHttpClientFactory>();
+        httpFactory.CreateClient().Returns(_fixture.Client);
 
-            var httpFactory = Substitute.For<IHttpClientFactory>();
-            httpFactory.CreateClient().Returns(_fixture.Client);
+        _sut = new AuthLogoutService(httpFactory, options);
+    }
 
-            _sut = new AuthLogoutService(httpFactory, _configuration);
-        }
+    [Fact]
+    public void Constructor_ShouldThrowArgumentNullException_WhenHttpClientFactoryIsNull()
+    {
+        // Arrange // Act
+        Action act = () => new AuthLogoutService(null!, Options.Create(new AuthOptions()));
 
-        [Fact]
-        public void Constructor_ShouldThrowArgumentNullException_WhenHttpClientFactoryIsNull()
-        {
-            System.Action act = () => new AuthLogoutService(null!, _configuration);
-            act.Should().Throw<ArgumentNullException>().WithParameterName("httpClientFactory");
-        }
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("httpClientFactory");
+    }
 
-        [Fact]
-        public void Constructor_ShouldThrowArgumentNullException_WhenConfigurationIsNull()
-        {
-            System.Action act = () => new AuthLogoutService(Substitute.For<IHttpClientFactory>(), null!);
-            act.Should().Throw<ArgumentNullException>().WithParameterName("configuration");
-        }
+    [Fact]
+    public void Constructor_ShouldThrowArgumentNullException_WhenOptionsIsNull()
+    {
+        // Arrange // Act
+        Action act = () => new AuthLogoutService(Substitute.For<IHttpClientFactory>(), null!);
 
-        [Fact]
-        public async Task LogoutAsync_ShouldReturnSuccessResult_WhenResponseIsSuccessful()
-        {
-            // Arrange
-            _fixture.Handler.SetupResponse(HttpStatusCode.OK, "");
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("options");
+    }
 
-            // Act
-            var result = await _sut.LogoutAsync("Bearer fake-access-token", "fake-refresh-token", CancellationToken.None);
+    [Fact]
+    public async Task LogoutAsync_ShouldSendRequestWithAuthorization_WhenAccessTokenProvided()
+    {
+        // Arrange
+        _fixture.Handler.SetupResponse(HttpStatusCode.OK, "");
 
-            // Assert
-            result.IsSuccess.Should().BeTrue();
+        // Act
+        await _sut.LogoutAsync("Bearer fake-access-token", "fake-refresh-token", CancellationToken.None);
 
-            _fixture.Handler.LastRequest!.RequestUri!.ToString()
-                .Should().Contain("/protocol/openid-connect/logout");
-            _fixture.Handler.LastRequest!.Method.Should().Be(HttpMethod.Post);
-            _fixture.Handler.LastRequest!.Headers.Authorization!.Scheme.Should().Be("Bearer");
-            _fixture.Handler.LastRequest!.Headers.Authorization!.Parameter.Should().Be("fake-access-token");
-        }
+        // Assert
+        _fixture.Handler.LastRequest!.RequestUri!.ToString().Should().Contain("/protocol/openid-connect/logout");
+        _fixture.Handler.LastRequest!.Headers.Authorization!.Parameter.Should().Be("fake-access-token");
+    }
 
-        [Fact]
-        public async Task LogoutAsync_ShouldReturnFailureResult_WhenResponseFails()
-        {
-            // Arrange
-            _fixture.Handler.SetupResponse(HttpStatusCode.BadRequest, "logout error");
+    [Fact]
+    public async Task LogoutAsync_ShouldThrowInvalidOperationException_WhenResponseFails()
+    {
+        // Arrange
+        _fixture.Handler.SetupResponse(HttpStatusCode.BadRequest, "logout error");
 
-            // Act
-            var result = await _sut.LogoutAsync("token", "refresh", CancellationToken.None);
+        // Act // Assert
+        await FluentActions.Awaiting(() => _sut.LogoutAsync("token", "refresh", CancellationToken.None))
+            .Should()
+            .ThrowAsync<InvalidOperationException>()
+            .WithMessage("*logout error*");
+    }
 
-            // Assert
-            result.IsFailure.Should().BeTrue();
-            result.Error.Code.Should().Be("OAuth.LogoutFailed");
-            result.Error.Description.Should().Contain("logout error");
-        }
+    [Fact]
+    public async Task LogoutAsync_ShouldNotSetAuthorizationHeader_WhenAccessTokenIsNull()
+    {
+        // Arrange
+        _fixture.Handler.SetupResponse(HttpStatusCode.OK, "");
 
-        [Fact]
-        public async Task LogoutAsync_ShouldSendRequestWithoutAuthorizationHeader_WhenAccessTokenIsNull()
-        {
-            // Arrange
-            _fixture.Handler.SetupResponse(HttpStatusCode.OK, "");
+        // Act
+        await _sut.LogoutAsync(null, "refresh", CancellationToken.None);
 
-            // Act
-            var result = await _sut.LogoutAsync(null, "refresh", CancellationToken.None);
-
-            // Assert
-            result.IsSuccess.Should().BeTrue();
-            _fixture.Handler.LastRequest!.Headers.Authorization.Should().BeNull();
-        }
+        // Assert
+        _fixture.Handler.LastRequest!.Headers.Authorization.Should().BeNull();
     }
 }

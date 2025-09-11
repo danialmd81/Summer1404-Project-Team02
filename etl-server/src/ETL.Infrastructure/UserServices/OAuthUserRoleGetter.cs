@@ -1,39 +1,30 @@
-﻿using ETL.Application.Abstractions.UserServices;
-using ETL.Application.Common;
-using ETL.Infrastructure.OAuth.Abstractions;
-using Microsoft.Extensions.Configuration;
+﻿using System.Text.Json;
+using ETL.Application.Abstractions.UserServices;
+using ETL.Application.Common.Options;
+using ETL.Infrastructure.OAuthClients.Abstractions;
+using Microsoft.Extensions.Options;
 
 namespace ETL.Infrastructure.UserServices;
 
 public class OAuthUserRoleGetter : IOAuthUserRoleGetter
 {
     private readonly IOAuthGetJsonArray _getArray;
-    private readonly IConfiguration _configuration;
+    private readonly AuthOptions _authOptions;
 
-    public OAuthUserRoleGetter(IOAuthGetJsonArray getArray, IConfiguration configuration)
+    public OAuthUserRoleGetter(IOAuthGetJsonArray getArray, IOptions<AuthOptions> options)
     {
         _getArray = getArray ?? throw new ArgumentNullException(nameof(getArray));
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _authOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
 
-    public async Task<Result<string?>> GetRoleForUserAsync(string userId, CancellationToken ct = default)
+    public async Task<string?> GetRoleForUserAsync(string userId, CancellationToken ct = default)
     {
-        var realm = _configuration["Authentication:Realm"];
-
+        var realm = _authOptions.Realm;
         var path = $"/admin/realms/{Uri.EscapeDataString(realm)}/users/{Uri.EscapeDataString(userId)}/role-mappings/realm";
 
-        var getRes = await _getArray.GetJsonArrayAsync(path, ct);
-        if (getRes.IsFailure)
-        {
-            if (getRes.Error.Type == ErrorType.NotFound)
-                return Result.Success<string?>(null);
+        List<JsonElement> arr = await _getArray.GetJsonArrayAsync(path, ct) ?? new List<JsonElement>();
 
-            return Result.Failure<string?>(getRes.Error);
-        }
-
-        var arr = getRes.Value;
-        if (arr == null || arr.Count == 0)
-            return Result.Success<string?>(null);
+        if (arr.Count == 0) return null;
 
         foreach (var el in arr)
         {
@@ -41,10 +32,10 @@ public class OAuthUserRoleGetter : IOAuthUserRoleGetter
             {
                 var rn = nameProp.GetString();
                 if (!string.IsNullOrEmpty(rn))
-                    return Result.Success<string?>(rn);
+                    return rn;
             }
         }
 
-        return Result.Success<string?>(null);
+        return null;
     }
 }
