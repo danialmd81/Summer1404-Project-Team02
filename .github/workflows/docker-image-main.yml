@@ -8,8 +8,8 @@ on:
 
 jobs:
   build-and-push:
-    # runs-on: ubuntu-latest
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
+    # runs-on: self-hosted
 
     steps:
       - name: Checkout code
@@ -22,14 +22,38 @@ jobs:
           username: admin
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      - name: Build frontend image
-        run: docker build -f etl_frontend/Dockerfile -t registry.dockerize.ir/${{ github.repository }}/frontend:$(date +%Y%m%d%H%M%S) ./frontend
+      - name: Remove old frontend:old (if exists)
+        run: docker rmi registry.dani-docker.ir/team2/frontend:old || true
 
-      - name: Push frontend image
-        run: docker push registry.dockerize.ir/${{ github.repository }}/frontend:$(date +%Y%m%d%H%M%S)
+      - name: Pull frontend:latest (if exists)
+        run: docker pull registry.dani-docker.ir/team2/frontend:latest || true
 
-      - name: Build backend image
-        run: docker build -f etl-server/Dockerfile -t registry.dockerize.ir/${{ github.repository }}/backend:$(date +%Y%m%d%H%M%S) ./backend
+      - name: Tag frontend:latest as old
+        run: docker tag registry.dani-docker.ir/team2/frontend:latest registry.dani-docker.ir/team2/frontend:old || true
 
-      - name: Push backend image
-        run: docker push registry.dockerize.ir/${{ github.repository }}/backend:$(date +%Y%m%d%H%M%S)
+      - name: Push frontend:old
+        run: docker push registry.dani-docker.ir/team2/frontend:old || true
+
+      - name: Build new frontend:latest
+        run: docker build -f etl-client/Dockerfile -t registry.dani-docker.ir/team2/frontend:latest ./frontend
+
+      - name: Push new frontend:latest
+        run: docker push registry.dani-docker.ir/team2/frontend:latest
+
+      - name: Remove old backend:old (if exists)
+        run: docker rmi registry.dani-docker.ir/team2/backend:old || true
+
+      - name: Pull backend:latest (if exists)
+        run: docker pull registry.dani-docker.ir/team2/backend:latest || true
+
+      - name: Tag backend:latest as old
+        run: docker tag registry.dani-docker.ir/team2/backend:latest registry.dani-docker.ir/team2/backend:old || true
+
+      - name: Push backend:old
+        run: docker push registry.dani-docker.ir/team2/backend:old || true
+
+      - name: Build new backend:latest
+        run: docker build -f etl-server/Dockerfile -t registry.dani-docker.ir/team2/backend:latest ./backend
+
+      - name: Push new backend:latest
+        run: docker push registry.dani-docker.ir/team2/backend:latest
