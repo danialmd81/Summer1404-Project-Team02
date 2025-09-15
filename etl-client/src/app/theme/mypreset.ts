@@ -1,55 +1,53 @@
-import Aura from '@primeuix/themes/aura';
 import {definePreset} from '@primeuix/themes';
+import Aura from '@primeuix/themes/aura';
 
 export const CustomPreset = definePreset(Aura, {
   semantic: {
     primary: {
-      50: '{orange.50}',
-      100: '{orange.100}',
-      200: '{orange.200}',
-      300: '{orange.300}',
-      400: '{orange.400}',
-      500: '{orange.500}',
-      600: '{orange.600}',
-      700: '{orange.700}',
-      800: '{orange.800}',
-      900: '{orange.900}',
-      950: '{orange.950}'
-    },
-    accent: {
-      50: '{amber.50}',
-      100: '{amber.100}',
-      200: '{amber.200}',
-      300: '{amber.300}',
-      400: '{amber.400}',
-      500: '{amber.500}',
-      600: '{amber.600}',
-      700: '{amber.700}',
-      800: '{amber.800}',
-      900: '{amber.900}',
-      950: '{amber.950}'
+      50: '#e6f4ef',
+      100: '#cce9df',
+      200: '#99d3bf',
+      300: '#66bda0',
+      400: '#3ecf8e',
+      500: '#28a46f',
+      600: '#1f8257',
+      700: '#16613f',
+      800: '#0d3f27',
+      900: '#006239',
+      950: '#00452a',
     },
     colorScheme: {
-      light: {
-        primary: {
-          color: '{orange.600}',
-          inverseColor: '#ffffff',
-          hoverColor: '{orange.700}',
-          activeColor: '{orange.800}'
+      root: {
+        surface: {
+          0: '#121212',
+          50: '#1e1e1e',
+          100: '#2a2a2a',
+          200: '#333333',
+          300: '#3d3d3d',
+          400: '#474747',
+          500: '#525252',
+          600: '#636363',
+          700: '#757575',
+          800: '#8a8a8a',
+          900: '#a1a1a1',
+          950: '#cfcfcf',
         },
-        highlight: {
-          background: '{amber.200}',
-          focusBackground: '{amber.300}',
-          color: '{orange.950}',
-          focusColor: '{orange.950}'
-        }
-      },
-      dark: {
+        text: {
+          color: '#ffffff',
+          secondary: '#e0e0e0',
+          muted: '#b3b3b3',
+        },
         primary: {
-          color: '{amber.300}',
-          inverseColor: '{stone.950}',
-          hoverColor: '{amber.400}',
-          activeColor: '{amber.500}'
+          color: '{primary.600}',
+          inverseColor: '#ffffff',
+          hoverColor: '{primary.900}',
+          activeColor: '{primary.800}'
+        },
+        secondary: {
+          color: '{primary.100}',
+          inverseColor: '#ffffff',
+          hoverColor: '{primary.900}',
+          activeColor: '{primary.800}'
         },
         highlight: {
           background: 'rgba(255, 204, 128, .16)',
@@ -57,8 +55,7 @@ export const CustomPreset = definePreset(Aura, {
           color: 'rgba(255,255,255,.87)',
           focusColor: 'rgba(255,255,255,.87)'
         }
-      }
-    }
-  }
+      },
+    },
+  },
 });
-

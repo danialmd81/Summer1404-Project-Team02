@@ -5,22 +5,34 @@ import {provideAnimationsAsync} from '@angular/platform-browser/animations/async
 import {providePrimeNG} from 'primeng/config';
 import {RouterModule} from '@angular/router';
 import {appRoutes} from './app.routes';
-import {TopbarComponent} from './layout/main/components/topbar/topbar.component';
-import {SidebarComponent} from './layout/main/components/sidebar/sidebar.component';
-import {AuthModule} from './layout/auth/auth.module';
 import {CustomPreset} from './theme/mypreset';
+import {MainModule} from './layout/main/main.module';
+import {DashboardModule} from './layout/dashboard/dashboard.module';
+import {HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi} from '@angular/common/http';
+import {BaseUrlInterceptor} from './features/auth/interceptors/base-url.interceptor';
+import {CredentialsInterceptor} from './features/auth/interceptors/credentials.interceptor';
 
 
 @NgModule({
-  declarations: [AppComponent],
   bootstrap: [AppComponent],
-  imports: [BrowserModule, RouterModule.forRoot(appRoutes), TopbarComponent, SidebarComponent, AuthModule],
+  declarations: [AppComponent],
+  imports: [BrowserModule, RouterModule.forRoot(appRoutes), MainModule, DashboardModule],
   providers: [provideAnimationsAsync(),
     providePrimeNG({
       theme: {
         preset: CustomPreset
       }
-    })]
+    }), provideHttpClient(withInterceptorsFromDi()),
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: BaseUrlInterceptor,
+      multi: true
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: CredentialsInterceptor,
+      multi: true
+    }]
 })
 export class AppModule {
 }
